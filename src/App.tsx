@@ -1,9 +1,29 @@
-import Navbar from './components/Navbar'
-import ChatBox from './components/ChatBox'
-import HistorySidebar, { useHistory } from './components/HistorySidebar'
+import { useState, useEffect } from 'react';
+import { useAccount } from 'wagmi';
+import Navbar from './components/Navbar';
+import ChatBox from './components/ChatBox';
+import HistorySidebar, { useHistory } from './components/HistorySidebar';
+import { resolveHederaAddress } from './services/hederaService';
 
 function App() {
-  const { sessions, activeSessionId, setActiveSessionId, createNewSession, updateActiveSession } = useHistory();
+  const { address, isConnected } = useAccount();
+  const [localHederaId, setLocalHederaId] = useState<string | undefined>();
+
+  // Resolve the native ID for the cloud-sync key
+  useEffect(() => {
+    const fetchId = async () => {
+      if (isConnected && address) {
+        const resolved = await resolveHederaAddress(address);
+        setLocalHederaId(resolved);
+      } else {
+        setLocalHederaId(undefined);
+      }
+    };
+    fetchId();
+  }, [address, isConnected]);
+
+  // Pass the Hedera ID to the history hook
+  const { sessions, activeSessionId, setActiveSessionId, createNewSession, updateActiveSession, isLoading } = useHistory(localHederaId);
 
   const activeSession = sessions.find(s => s.id === activeSessionId);
 
@@ -22,6 +42,7 @@ function App() {
           activeSessionId={activeSessionId} 
           onSelectSession={setActiveSessionId}
           onNewSession={createNewSession}
+          isLoading={isLoading}
         />
       </div>
 
@@ -29,17 +50,21 @@ function App() {
       <div className="flex-1 relative z-10 flex flex-col h-screen overflow-hidden">
         <Navbar />
         <main className="flex-1 overflow-hidden">
-          {activeSession && (
+          {activeSession ? (
             <ChatBox 
-              key={activeSession.id} // Re-mount when session changes
+              key={activeSession.id} 
               session={activeSession} 
               onUpdateSession={updateActiveSession} 
             />
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="animate-pulse text-soft-purple/50 font-black tracking-widest uppercase">Initialising Sync...</div>
+            </div>
           )}
         </main>
       </div>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
