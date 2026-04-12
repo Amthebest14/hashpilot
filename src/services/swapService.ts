@@ -63,8 +63,8 @@ export async function executeSaucerSwap(
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 60 * 20); // 20 mins
 
   const params = {
-    tokenIn,
-    tokenOut,
+    tokenIn: tokenIn as `0x${string}`,
+    tokenOut: tokenOut as `0x${string}`,
     fee: 3000, // 0.3% tier
     recipient: userAddress as `0x${string}`,
     deadline,
