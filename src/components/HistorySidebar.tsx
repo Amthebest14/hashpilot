@@ -23,21 +23,34 @@ export function useHistory(walletId: string | undefined) {
       if (walletId) {
         // Fetch from Supabase
         console.log(`[CLOUD_SYNC] Fetching history for ${walletId}...`);
-        const { data, error } = await supabase
-          .from('chat_sessions')
-          .select('*')
-          .eq('wallet_address', walletId)
-          .order('created_at', { ascending: false });
+        try {
+          const { data, error } = await supabase
+            .from('chat_sessions')
+            .select('*')
+            .eq('wallet_address', walletId)
+            .order('created_at', { ascending: false });
 
-        if (error) {
-          console.error('[CLOUD_SYNC] Error fetching sessions:', error);
+          if (error) {
+            console.error('[CLOUD_SYNC] Error fetching sessions:', error);
+            loadLocalFallback();
+          } else if (data && data.length > 0) {
+            setSessions(data);
+            setActiveSessionId(data[0].id);
+          } else {
+            // New user, create first session in cloud
+            const newSession: ChatSession = {
+              id: uuidv4(),
+              wallet_address: walletId,
+              title: 'New Conversation',
+              messages: [{ role: 'ai', content: "Hello! I'm Hashpilot, your Hedera copilot. How can I assist you today?" }]
+            };
+            await supabase.from('chat_sessions').insert([newSession]);
+            setSessions([newSession]);
+            setActiveSessionId(newSession.id);
+          }
+        } catch (err) {
+          console.error('[CLOUD_SYNC] Unexpected error:', err);
           loadLocalFallback();
-        } else if (data && data.length > 0) {
-          setSessions(data);
-          setActiveSessionId(data[0].id);
-        } else {
-          // New user, create first session in cloud
-          createNewSession();
         }
       } else {
         loadLocalFallback();
@@ -50,12 +63,23 @@ export function useHistory(walletId: string | undefined) {
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
-          setSessions(parsed);
-          if (parsed.length > 0) setActiveSessionId(parsed[0].id);
-        } catch {
-          setSessions([]);
-        }
+          if (parsed.length > 0) {
+            setSessions(parsed);
+            setActiveSessionId(parsed[0].id);
+            return;
+          }
+        } catch { /* ignore */ }
       }
+      // Nothing in storage either — create a default guest session
+      const guestSession: ChatSession = {
+        id: uuidv4(),
+        wallet_address: 'guest',
+        title: 'New Conversation',
+        messages: [{ role: 'ai', content: "Hello! I'm Hashpilot, your Hedera copilot. How can I assist you today?" }]
+      };
+      setSessions([guestSession]);
+      setActiveSessionId(guestSession.id);
+      localStorage.setItem('hashpilot_sessions', JSON.stringify([guestSession]));
     };
 
     loadHistory();
