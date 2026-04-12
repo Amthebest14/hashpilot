@@ -2,6 +2,24 @@ import { useSendTransaction, useAccount } from 'wagmi';
 import { parseEther } from 'viem';
 import type { AIResponse } from './aiService';
 
+// Helper to convert 0.0.x to 0x if needed for viem validation
+// Most Hedera JSON-RPC relays handle 0x, and some handle 0.0.x directly
+// But viem type validation requires 0x...
+const ensureEvmAddress = async (address: string): Promise<`0x${string}`> => {
+  if (address.startsWith('0x')) return address as `0x${string}`;
+  
+  try {
+    const response = await fetch(`https://testnet.mirrornode.hedera.com/api/v1/accounts/${address}`);
+    if (!response.ok) throw new Error('Could not resolve Hedera Account ID');
+    
+    const data = await response.json();
+    return data.evm_address as `0x${string}`;
+  } catch (error) {
+    console.error('Error resolving Account ID to EVM:', error);
+    throw new Error(`Invalid destination address: ${address}`);
+  }
+};
+
 export function useActionRouter() {
   const { sendTransactionAsync } = useSendTransaction();
   const { isConnected } = useAccount();
@@ -17,37 +35,29 @@ export function useActionRouter() {
       case 'transfer_token': {
         const { amount, destination } = parameters;
         
-        if (!amount || !destination) {
-          throw new Error('Missing amount or destination for transfer.');
-        }
+        if (!amount) throw new Error('Missing amount for transfer.');
+        if (!destination) throw new Error('I couldn\'t identify where you want to send the tokens. Please provide an account ID or address.');
 
-        console.log(`[ACTION_ROUTER] Triggering transfer: ${amount} to ${destination}`);
+        console.log(`[ACTION_ROUTER] Resolving destination: ${destination}`);
         
         try {
-          // Sending transaction. For a basic test, we assume native token (HBAR on Hedera / ETH on mainnet)
-          // `parseEther` assumes 18 decimals, but Hedera HBAR has 8 decimals.
-          // In wagmi/viem with custom chain, you usually use parseUnits(amount, decimals)
-          // For this proof of concept, we use a raw transaction request.
-          // Note for true Hedera integration, amounts might need 8 zeros, but standard EVM viem uses ether scale for generic tests.
+          const toAddress = await ensureEvmAddress(destination);
+          
+          console.log(`[ACTION_ROUTER] Triggering transfer: ${amount} to ${toAddress}`);
+          
           const txHash = await sendTransactionAsync({
-            to: destination as `0x${string}`,
+            to: toAddress,
             value: parseEther(amount),
           });
           
           return txHash;
         } catch (err: any) {
-          console.error('[ACTION_ROUTER] Transaction failed or rejected:', err);
-          throw new Error(err.message || 'Transaction dropped or rejected by user.');
+          console.error('[ACTION_ROUTER] Transaction failed:', err);
+          throw new Error(err.message || 'Transaction failed.');
         }
       }
       
-      // Fallbacks for other mock intents
-      case 'check_balance':
-        console.log('[ACTION_ROUTER] Action check_balance triggered locally.');
-        return null;
-        
       default:
-        console.log(`[ACTION_ROUTER] Intent ${intent} not fully mapped to smart contract execution yet.`);
         return null;
     }
   };

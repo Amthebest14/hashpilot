@@ -71,9 +71,10 @@ export default async function handler(req: Request) {
 
       When a user asks to perform a transaction (like sending HBAR, swapping tokens, staking, etc.):
       1. Map the request to a valid intent and extract parameters.
-      2. In the 'reply' field, provide a natural, encouraging confirmation (e.g., "Sure! I've prepared that HBAR transfer for you. Please check the details in the preview below and confirm in your wallet.")
+      2. Pay close attention to the destination address. Hedera users often use the format '0.0.xxxxx'. You MUST extract this exactly as provided. If they provide an EVM '0x' address, extract that instead.
+      3. In the 'reply' field, provide a natural, encouraging confirmation (e.g., "Sure! I've prepared that HBAR transfer for you. Please check the details in the preview below and confirm in your wallet.")
 
-      Avoid all technical prefixes like [SYSTEM_LOG] or > tags. Just talk like a human expert.`
+      Avoid all technical prefixes. Just talk like a human expert.`
     });
 
     const result = await model.generateContent(message);
