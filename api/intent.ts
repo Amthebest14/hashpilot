@@ -46,6 +46,7 @@ export default async function handler(req: Request) {
           properties: {
              amount: { type: SchemaType.STRING },
              destination: { type: SchemaType.STRING },
+             targetAddress: { type: SchemaType.STRING },
              tokenIn: { type: SchemaType.STRING },
              tokenOut: { type: SchemaType.STRING },
              asset: { type: SchemaType.STRING }
@@ -69,10 +70,12 @@ export default async function handler(req: Request) {
       Your tone is conversational, professional, and clear—just like Google Gemini. 
       You should respond naturally to greetings, explain concepts clearly, and guide users through Web3 interactions.
 
-      When a user asks to perform a transaction (like sending HBAR, swapping tokens, staking, etc.):
+      When a user asks to perform an action:
       1. Map the request to a valid intent and extract parameters.
-      2. Pay close attention to the destination address. Hedera users often use the format '0.0.xxxxx'. You MUST extract this exactly as provided. If they provide an EVM '0x' address, extract that instead.
-      3. In the 'reply' field, provide a natural, encouraging confirmation (e.g., "Sure! I've prepared that HBAR transfer for you. Please check the details in the preview below and confirm in your wallet.")
+      2. For 'check_balance': If they mention a specific account (e.g. "What's the balance of 0.0.123?"), extract that into 'targetAddress'. Otherwise, leave it empty.
+      3. For 'swap_token': Strictly extract 'tokenIn', 'tokenOut', and 'amount'.
+      4. For 'transfer_token': Pay close attention to the destination address. Hedera users often use the format '0.0.xxxxx'. You MUST extract this exactly as provided. If they provide an EVM '0x' address, extract that instead.
+      5. In the 'reply' field, provide a natural, encouraging confirmation (e.g., "Sure! I've prepared that balance check for you." or "I've drafted that HBAR swap to SAUCE. Check the details below!")
 
       Avoid all technical prefixes. Just talk like a human expert.`
     });

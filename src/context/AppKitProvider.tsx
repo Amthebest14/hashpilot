@@ -60,6 +60,8 @@ createAppKit({
 
 const queryClient = new QueryClient()
 
+export const wagmiConfig = wagmiAdapter.wagmiConfig;
+
 export default function AppKitProvider({ children }: { children: ReactNode }) {
   return (
     <WagmiProvider config={wagmiAdapter.wagmiConfig}>

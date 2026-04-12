@@ -2,6 +2,7 @@ import { useSendTransaction, useAccount } from 'wagmi';
 import { parseEther } from 'viem';
 import type { AIResponse } from './aiService';
 import { getHederaBalance, resolveHederaAddress } from './hederaService';
+import { executeSaucerSwap } from './swapService';
 
 // Helper to convert 0.0.x to 0x if needed for viem validation
 const ensureEvmAddress = async (address: string): Promise<`0x${string}`> => {
@@ -33,14 +34,13 @@ export function useActionRouter() {
     switch (intent) {
       case 'check_balance': {
         try {
-          // Resolve current address to native ID for the balance lookup if needed
-          // Mirror Node API handles EVM addresses too, but resolve for safety
-          const nativeId = await resolveHederaAddress(address!);
+          const target = parameters.targetAddress || address!;
+          const nativeId = await resolveHederaAddress(target);
           const balance = await getHederaBalance(nativeId);
-          return `[SYS_MSG] Current Balance: ${balance.hbar} HBAR`;
+          return `[SYS_MSG] Balance for ${nativeId}: ${balance.hbar} HBAR`;
         } catch (err: any) {
           console.error('[ACTION_ROUTER] Balance check failed:', err);
-          throw new Error('I could not retrieve your balance at this moment.');
+          throw new Error('I could not retrieve the balance at this moment.');
         }
       }
 
@@ -48,7 +48,7 @@ export function useActionRouter() {
         const { amount, destination } = parameters;
         
         if (!amount) throw new Error('Missing amount for transfer.');
-        if (!destination) throw new Error('I couldn\'t identify where you want to send the tokens. Please provide an account ID or address.');
+        if (!destination) throw new Error('I couldn\'t identify where you want to send the tokens.');
 
         try {
           const toAddress = await ensureEvmAddress(destination);
@@ -60,12 +60,29 @@ export function useActionRouter() {
           
           return `[TX_HASH] ${txHash}`;
         } catch (err: any) {
-          // Surface specific "User Rejected" messages
           if (err.message?.includes('User rejected') || err.name === 'UserRejectedRequestError') {
              throw new Error('Transaction rejected by user.');
           }
-          console.error('[ACTION_ROUTER] Transaction failed:', err);
-          throw new Error(err.message || 'Transaction failed.');
+          throw err;
+        }
+      }
+
+      case 'swap_token': {
+        const { amount, tokenIn, tokenOut } = parameters;
+
+        if (!amount || !tokenIn || !tokenOut) {
+          throw new Error('Missing details for the swap. I need the amount and both tokens.');
+        }
+
+        try {
+          const txHash = await executeSaucerSwap(tokenIn, tokenOut, amount, address!);
+          return `[TX_HASH] ${txHash}`;
+        } catch (err: any) {
+          if (err.message?.includes('User rejected') || err.name === 'UserRejectedRequestError') {
+            throw new Error('Transaction rejected by user.');
+          }
+          console.error('[ACTION_ROUTER] Swap failed:', err);
+          throw new Error(err.message || 'Swap execution failed.');
         }
       }
       

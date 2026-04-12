@@ -14,6 +14,7 @@ export type IntentType =
 export type SupportedParameters = {
   amount?: string;
   destination?: string;
+  targetAddress?: string;
   tokenIn?: string;
   tokenOut?: string;
   asset?: string;
