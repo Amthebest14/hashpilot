@@ -1,6 +1,5 @@
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 
-// Optional: Enable Edge runtime for faster execution on Vercel
 export const config = {
   runtime: 'edge',
 };
@@ -38,7 +37,7 @@ export default async function handler(req: Request) {
         },
         parameters: {
           type: SchemaType.OBJECT,
-          description: "An object containing the extracted variables for the intent (e.g., amount, destination, tokenIn, tokenOut).",
+          description: "An object containing the extracted variables for the intent.",
           properties: {
              amount: { type: SchemaType.STRING },
              destination: { type: SchemaType.STRING },
@@ -49,7 +48,7 @@ export default async function handler(req: Request) {
         },
         reply: {
           type: SchemaType.STRING,
-          description: "A human-readable string acknowledging the action."
+          description: "A friendly, conversational, and helpful response text (Gemini-style)."
         }
       },
       required: ["intent", "parameters", "reply"]
@@ -61,17 +60,19 @@ export default async function handler(req: Request) {
         responseMimeType: 'application/json',
         responseSchema: schema,
       },
-      systemInstruction: `You are 'Hashpilot', a terminal-based AI intent router for the Hedera network. 
-      Your job is to read user input and map it to exactly one of the supported intents.
-      If the user is just chatting or asking a general question, the intent is 'conversational'.
-      You must always return valid JSON fulfilling the schema.
-      Keep the 'reply' short, robotic, and terminal-like (e.g., '[SYSTEM_LOG] Parsing transfer protocol...').`
+      systemInstruction: `You are 'Hashpilot', a helpful, friendly, and highly capable AI assistant for the Hedera network. 
+      Your tone is conversational, professional, and clear—just like Google Gemini. 
+      You should respond naturally to greetings, explain concepts clearly, and guide users through Web3 interactions.
+
+      When a user asks to perform a transaction (like sending HBAR, swapping tokens, staking, etc.):
+      1. Map the request to a valid intent and extract parameters.
+      2. In the 'reply' field, provide a natural, encouraging confirmation (e.g., "Sure! I've prepared that HBAR transfer for you. Please check the details in the preview below and confirm in your wallet.")
+
+      Avoid all technical prefixes like [SYSTEM_LOG] or > tags. Just talk like a human expert.`
     });
 
     const result = await model.generateContent(message);
     const responseText = result.response.text();
-    
-    // Parse to ensure it matches format (though the model config forces it)
     const jsonOutput = JSON.parse(responseText);
 
     return new Response(JSON.stringify(jsonOutput), {
@@ -81,6 +82,11 @@ export default async function handler(req: Request) {
 
   } catch (error: any) {
     console.error('Gemini API Error:', error);
-    return new Response(JSON.stringify({ error: error.message || 'Internal Server Error' }), { status: 500 });
+    return new Response(JSON.stringify({ 
+      error: error.message || 'Internal Server Error',
+      intent: 'conversational',
+      parameters: {},
+      reply: "I'm having a little trouble connecting to my neural link right now. Please try again in a moment!"
+    }), { status: 500 });
   }
 }

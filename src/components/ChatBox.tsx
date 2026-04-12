@@ -37,45 +37,49 @@ export default function ChatBox({ session, onUpdateSession }: ChatBoxProps) {
       const response = await queryAI(text);
       
       const updatedAiMessages = [...newMessages, { role: 'ai' as const, content: response.reply }];
-      onUpdateSession(updatedAiMessages); // update with AI reply text first
+      onUpdateSession(updatedAiMessages); 
       
       // Attempt action routing if intent is anything other than conversational
       if (response.intent !== 'conversational') {
         try {
           const txResponse = await handleIntent(response);
           if (txResponse) {
-             onUpdateSession([...updatedAiMessages, { role: 'ai' as const, content: `[ACTION_SUCCESS] Hash: ${txResponse}` }]);
+             onUpdateSession([...updatedAiMessages, { role: 'ai' as const, content: `I've successfully submitted the transaction to the network. Track it here: ${txResponse}` }]);
           }
         } catch (actionErr: any) {
-           onUpdateSession([...updatedAiMessages, { role: 'ai' as const, content: `[ACTION_FAILED] ${actionErr.message}` }]);
+           onUpdateSession([...updatedAiMessages, { role: 'ai' as const, content: `I ran into an issue while processing that: ${actionErr.message}. Should we try again?` }]);
         }
       }
     } catch (error) {
-      onUpdateSession([...newMessages, { role: 'ai' as const, content: "[SYSTEM_ERROR] Neural link disconnected." }]);
+      onUpdateSession([...newMessages, { role: 'ai' as const, content: "I'm sorry, I'm having trouble connecting to my brain right now. Please try again soon!" }]);
     } finally {
       setIsThinking(false);
     }
   };
 
   return (
-    <div className="flex flex-col h-full w-full pl-6 pr-4 relative">
+    <div className="flex flex-col h-full w-full max-w-5xl mx-auto px-6 relative">
       <div 
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto pt-6 pb-20 no-scrollbar space-y-1"
+        className="flex-1 overflow-y-auto pt-10 pb-40 no-scrollbar space-y-4"
       >
         {session.messages.map((msg, idx) => (
           <ChatMessage key={idx} role={msg.role} content={msg.content} />
         ))}
         
         {isThinking && (
-          <div className="flex w-full mb-2 font-mono text-sm md:text-base text-[#00F2FF]">
-            <span className="opacity-50 select-none mr-4">[SYSTEM_LOG]</span>
-            <span className="animate-pulse">Processing...</span>
+          <div className="flex items-center gap-3 ml-1 mb-8">
+             <div className="flex gap-1">
+                <div className="w-1.5 h-1.5 bg-soft-purple rounded-full animate-bounce [animation-duration:1s]"></div>
+                <div className="w-1.5 h-1.5 bg-soft-purple rounded-full animate-bounce [animation-duration:1s] [animation-delay:0.2s]"></div>
+                <div className="w-1.5 h-1.5 bg-soft-purple rounded-full animate-bounce [animation-duration:1s] [animation-delay:0.4s]"></div>
+             </div>
+             <span className="text-[10px] uppercase tracking-[0.3em] font-black text-soft-purple/60">Processing Neural Link</span>
           </div>
         )}
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0">
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-main-blue via-main-blue/80 to-transparent pt-12">
         <ChatInput onSend={handleSend} disabled={isThinking} />
       </div>
     </div>
