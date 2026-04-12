@@ -1,10 +1,13 @@
 import { useAccount } from 'wagmi';
 import { useEffect, useState } from 'react';
+import { useAppKit } from '@reown/appkit/react';
 import { resolveHederaAddress } from '../services/hederaService';
+import { Wallet } from 'lucide-react';
 
 export default function Navbar() {
   const { address, isConnected } = useAccount();
   const [displayAddress, setDisplayAddress] = useState<string>('');
+  const { open } = useAppKit();
 
   useEffect(() => {
     const updateAddress = async () => {
@@ -35,13 +38,23 @@ export default function Navbar() {
       </div>
       
       <div className="flex items-center gap-6">
-        {isConnected && displayAddress && (
-          <div className="hidden lg:flex items-center px-4 py-2 glass-panel rounded-xl text-xs font-bold text-white/80 gap-2 border border-white/10">
+        {isConnected && displayAddress ? (
+          <button 
+            onClick={() => open()}
+            className="flex items-center px-5 py-2.5 glass-panel rounded-xl text-sm font-bold text-white gap-3 border border-white/10 hover:border-soft-purple/50 transition-all purple-glow group"
+          >
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-            {displayAddress}
-          </div>
+            <span className="tracking-wide">{displayAddress}</span>
+          </button>
+        ) : (
+          <button 
+            onClick={() => open()}
+            className="flex items-center px-6 py-2.5 bg-soft-purple text-white rounded-xl text-sm font-bold gap-3 hover:scale-105 active:scale-95 transition-all purple-glow"
+          >
+            <Wallet size={18} />
+            Connect Wallet
+          </button>
         )}
-        <appkit-button />
       </div>
     </nav>
   );
