@@ -48,7 +48,7 @@ export const queryAI = async (message: string): Promise<AIResponse> => {
     return {
       intent: 'conversational',
       parameters: {},
-      reply: '[SYSTEM_ERROR] Failed to establish neural link.'
+      reply: "I'm having trouble connecting right now. Please try again in a moment!"
     };
   }
 };
