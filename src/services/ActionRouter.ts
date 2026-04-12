@@ -2,7 +2,7 @@ import { useSendTransaction, useAccount } from 'wagmi';
 import { parseEther } from 'viem';
 import type { AIResponse } from './aiService';
 import { getHederaBalance, resolveHederaAddress } from './hederaService';
-import { executeSaucerSwap } from './swapService';
+import { prepareSaucerSwap } from './swapService';
 
 // Helper to convert 0.0.x to 0x if needed for viem validation
 const ensureEvmAddress = async (address: string): Promise<`0x${string}`> => {
@@ -75,7 +75,14 @@ export function useActionRouter() {
         }
 
         try {
-          const txHash = await executeSaucerSwap(tokenIn, tokenOut, amount, address!);
+          const swapTx = await prepareSaucerSwap(tokenIn, tokenOut, amount, address!);
+          
+          const txHash = await sendTransactionAsync({
+            to: swapTx.to,
+            data: swapTx.data,
+            value: swapTx.value,
+          });
+
           return `[TX_HASH] ${txHash}`;
         } catch (err: any) {
           if (err.message?.includes('User rejected') || err.name === 'UserRejectedRequestError') {

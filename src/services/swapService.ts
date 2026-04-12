@@ -1,15 +1,13 @@
-import { writeContract } from '@wagmi/core';
-import { parseUnits } from 'viem';
-import { wagmiConfig } from '../context/AppKitProvider';
+import { encodeFunctionData, parseUnits } from 'viem';
 
 // SaucerSwap V2 Testnet Router
 const SAUCERSWAP_V2_ROUTER = '0x0000000000000000000000000000000000159428'; // Entity ID 0.0.1414040
 
 // Token Mappings (Testnet)
 const TOKENS = {
-  'HBAR': '0xb1F616b8134F602c3Bb465fB5b5e6565cCAd37Ed', // WHBAR (Viem expects WHBAR for router swaps)
+  'HBAR': '0xb1F616b8134F602c3Bb465fB5b5e6565cCAd37Ed', // WHBAR
   'SAUCE': '0x00000000000000000000000000000000000b2ad5',
-  'USDC': '0x0000000000000000000000000000000000068cc6', // Example Testnet USDC
+  'USDC': '0x0000000000000000000000000000000000068cc6',
 };
 
 const SAUCERSWAP_V2_ABI = [
@@ -40,7 +38,7 @@ const SAUCERSWAP_V2_ABI = [
   }
 ] as const;
 
-export async function executeSaucerSwap(
+export async function prepareSaucerSwap(
   tokenInName: string,
   tokenOutName: string,
   amount: string,
@@ -56,7 +54,7 @@ export async function executeSaucerSwap(
     throw new Error(`Unsupported token pairing: ${tin} to ${tout}`);
   }
 
-  // Precision check: HBAR/SAUCE usually 8 or 6. We'll use 8 for HBAR and 6 for others as standard testnet proxy.
+  // Precision check: HBAR/SAUCE Usually 8 or 6.
   const decimals = tin === 'HBAR' ? 8 : 6;
   const amountIn = parseUnits(amount, decimals);
 
@@ -65,21 +63,23 @@ export async function executeSaucerSwap(
   const params = {
     tokenIn: tokenIn as `0x${string}`,
     tokenOut: tokenOut as `0x${string}`,
-    fee: 3000, // 0.3% tier
+    fee: 3000,
     recipient: userAddress as `0x${string}`,
     deadline,
     amountIn,
-    amountOutMinimum: 0n, // Slippage protection: 0 for testing
+    amountOutMinimum: 0n,
     sqrtPriceLimitX96: 0n
   };
 
-  const hash = await writeContract(wagmiConfig, {
-    address: SAUCERSWAP_V2_ROUTER,
+  const encodedData = encodeFunctionData({
     abi: SAUCERSWAP_V2_ABI,
     functionName: 'exactInputSingle',
     args: [params],
-    value: tin === 'HBAR' ? amountIn : 0n, // Attach HBAR if tokenIn is HBAR
   });
 
-  return hash;
+  return {
+    to: SAUCERSWAP_V2_ROUTER as `0x${string}`,
+    data: encodedData,
+    value: tin === 'HBAR' ? amountIn : 0n,
+  };
 }
