@@ -88,10 +88,11 @@ export function useActionRouter() {
           const txHash = await walletClient.request({
             method: 'eth_sendTransaction',
             params: [{
-              from: address as `0x${string}`,
+              from: walletClient.account.address,
               to: swapTx.to,
               data: swapTx.data,
               value: toHex(swapTx.value),
+              gas: toHex(3000000n)
             }]
           });
 
