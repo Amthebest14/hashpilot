@@ -44,10 +44,24 @@ export default function ChatBox({ session, onUpdateSession }: ChatBoxProps) {
         try {
           const txResponse = await handleIntent(response);
           if (txResponse) {
-             onUpdateSession([...updatedAiMessages, { role: 'ai' as const, content: `I've successfully submitted the transaction to the network. Track it here: ${txResponse}` }]);
+             let finalMessage = txResponse;
+             
+             if (txResponse.startsWith('[SYS_MSG] ')) {
+                finalMessage = txResponse.replace('[SYS_MSG] ', '');
+             } else if (txResponse.startsWith('[TX_HASH] ')) {
+                const hash = txResponse.replace('[TX_HASH] ', '');
+                finalMessage = `Transaction confirmed! ✅ View it on Hashscan: https://hashscan.io/testnet/transaction/${hash}`;
+             }
+
+             onUpdateSession([...updatedAiMessages, { role: 'ai' as const, content: finalMessage }]);
           }
         } catch (actionErr: any) {
-           onUpdateSession([...updatedAiMessages, { role: 'ai' as const, content: `I ran into an issue while processing that: ${actionErr.message}. Should we try again?` }]);
+           // Improved error handling for specific cases like rejections
+           const errorContent = actionErr.message === 'Transaction rejected by user.' 
+             ? actionErr.message 
+             : `I ran into an issue: ${actionErr.message}`;
+             
+           onUpdateSession([...updatedAiMessages, { role: 'ai' as const, content: errorContent }]);
         }
       }
     } catch (error) {

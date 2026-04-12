@@ -1,10 +1,9 @@
 import { useSendTransaction, useAccount } from 'wagmi';
 import { parseEther } from 'viem';
 import type { AIResponse } from './aiService';
+import { getHederaBalance, resolveHederaAddress } from './hederaService';
 
 // Helper to convert 0.0.x to 0x if needed for viem validation
-// Most Hedera JSON-RPC relays handle 0x, and some handle 0.0.x directly
-// But viem type validation requires 0x...
 const ensureEvmAddress = async (address: string): Promise<`0x${string}`> => {
   if (address.startsWith('0x')) return address as `0x${string}`;
   
@@ -22,7 +21,7 @@ const ensureEvmAddress = async (address: string): Promise<`0x${string}`> => {
 
 export function useActionRouter() {
   const { sendTransactionAsync } = useSendTransaction();
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
 
   const handleIntent = async (aiResponse: AIResponse): Promise<string | null> => {
     if (!isConnected) {
@@ -32,26 +31,39 @@ export function useActionRouter() {
     const { intent, parameters } = aiResponse;
 
     switch (intent) {
+      case 'check_balance': {
+        try {
+          // Resolve current address to native ID for the balance lookup if needed
+          // Mirror Node API handles EVM addresses too, but resolve for safety
+          const nativeId = await resolveHederaAddress(address!);
+          const balance = await getHederaBalance(nativeId);
+          return `[SYS_MSG] Current Balance: ${balance.hbar} HBAR`;
+        } catch (err: any) {
+          console.error('[ACTION_ROUTER] Balance check failed:', err);
+          throw new Error('I could not retrieve your balance at this moment.');
+        }
+      }
+
       case 'transfer_token': {
         const { amount, destination } = parameters;
         
         if (!amount) throw new Error('Missing amount for transfer.');
         if (!destination) throw new Error('I couldn\'t identify where you want to send the tokens. Please provide an account ID or address.');
 
-        console.log(`[ACTION_ROUTER] Resolving destination: ${destination}`);
-        
         try {
           const toAddress = await ensureEvmAddress(destination);
-          
-          console.log(`[ACTION_ROUTER] Triggering transfer: ${amount} to ${toAddress}`);
           
           const txHash = await sendTransactionAsync({
             to: toAddress,
             value: parseEther(amount),
           });
           
-          return txHash;
+          return `[TX_HASH] ${txHash}`;
         } catch (err: any) {
+          // Surface specific "User Rejected" messages
+          if (err.message?.includes('User rejected') || err.name === 'UserRejectedRequestError') {
+             throw new Error('Transaction rejected by user.');
+          }
           console.error('[ACTION_ROUTER] Transaction failed:', err);
           throw new Error(err.message || 'Transaction failed.');
         }
