@@ -16,14 +16,14 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Message is required' }), { status: 400 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = (process as any).env.GEMINI_API_KEY;
     if (!apiKey) {
       return new Response(JSON.stringify({ error: 'GEMINI_API_KEY is not set' }), { status: 500 });
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    const schema = {
+    const schema: any = {
       type: SchemaType.OBJECT,
       properties: {
         intent: {
