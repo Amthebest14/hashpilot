@@ -1,4 +1,4 @@
-import { encodeFunctionData, parseUnits } from 'viem';
+import { encodeFunctionData, parseUnits, parseEther } from 'viem';
 
 // SaucerSwap V2 Testnet Router
 const SAUCERSWAP_V2_ROUTER = '0x0000000000000000000000000000000000159428'; // Entity ID 0.0.1414040
@@ -57,6 +57,9 @@ export async function prepareSaucerSwap(
   // Precision check: HBAR/SAUCE Usually 8 or 6.
   const decimals = tin === 'HBAR' ? 8 : 6;
   const amountIn = parseUnits(amount, decimals);
+  
+  // Hedera EVM uses 18-decimal weibars for msg.value, even if HBAR itself is 8 decimals
+  const txValue = tin === 'HBAR' ? parseEther(amount) : 0n;
 
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 60 * 20); // 20 mins
 
@@ -80,6 +83,6 @@ export async function prepareSaucerSwap(
   return {
     to: SAUCERSWAP_V2_ROUTER as `0x${string}`,
     data: encodedData,
-    value: tin === 'HBAR' ? amountIn : 0n,
+    value: txValue,
   };
 }

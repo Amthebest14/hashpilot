@@ -1,5 +1,5 @@
-import { useSendTransaction, useAccount, useWalletClient } from 'wagmi';
-import { parseEther, toHex } from 'viem';
+import { useSendTransaction, useAccount } from 'wagmi';
+import { parseEther } from 'viem';
 import type { AIResponse } from './aiService';
 import { getHederaBalance, resolveHederaAddress } from './hederaService';
 import { prepareSaucerSwap } from './swapService';
@@ -22,7 +22,6 @@ const ensureEvmAddress = async (address: string): Promise<`0x${string}`> => {
 
 export function useActionRouter() {
   const { sendTransactionAsync } = useSendTransaction();
-  const { data: walletClient } = useWalletClient();
   const { isConnected, address } = useAccount();
 
   const handleIntent = async (aiResponse: AIResponse): Promise<string | null> => {
@@ -75,25 +74,16 @@ export function useActionRouter() {
           throw new Error('Missing details for the swap. I need the amount and both tokens.');
         }
 
-        if (!walletClient) {
-          throw new Error('Wallet client not available. Please try reconnecting your wallet.');
-        }
-
         try {
           const swapTx = await prepareSaucerSwap(tokenIn, tokenOut, amount, address!);
           
-          // Force raw eth_sendTransaction to bypass viem/wagmi wallet_sendTransaction incompatibilities
-          console.log('[ACTION_ROUTER] Issuing raw eth_sendTransaction...');
-          
-          const txHash = await walletClient.request({
-            method: 'eth_sendTransaction',
-            params: [{
-              from: walletClient.account.address,
-              to: swapTx.to,
-              data: swapTx.data,
-              value: toHex(swapTx.value),
-              gas: toHex(3000000n)
-            }]
+          // Reverting to sendTransactionAsync which is proven to work for HBAR transfers.
+          // We include the data and manual gas limit to fix the swap execution.
+          const txHash = await sendTransactionAsync({
+            to: swapTx.to,
+            data: swapTx.data,
+            value: swapTx.value,
+            gas: 3000000n, // Hardcode 3M gas for complex contract call
           });
 
           return `[TX_HASH] ${txHash}`;
@@ -102,20 +92,13 @@ export function useActionRouter() {
             throw new Error('Transaction rejected by user.');
           }
           console.error('[ACTION_ROUTER] Swap failed:', err);
-          throw new Error(actionErrorMessage(err));
+          throw new Error(err.message || 'Swap execution failed.');
         }
       }
       
       default:
         return null;
     }
-  };
-
-  const actionErrorMessage = (err: any) => {
-    if (err.message?.includes('method not supported')) {
-      return 'Your wallet does not support this transaction method. Try using a different wallet like HashPack.';
-    }
-    return err.message || 'Action execution failed.';
   };
 
   return { handleIntent };
