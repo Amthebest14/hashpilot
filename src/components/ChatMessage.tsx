@@ -7,23 +7,18 @@ export default function ChatMessage({ role, content }: ChatMessageProps) {
   const isAI = role === 'ai';
   
   return (
-    <div className={`flex w-full mb-6 ${isAI ? 'justify-start' : 'justify-end'}`}>
-      <div 
-        className={`max-w-[80%] px-6 py-4 rounded-2xl glass-panel shadow-2xl relative ${
-          isAI 
-            ? 'rounded-tl-none border-l-2 border-l-electric-cyan' 
-            : 'rounded-tr-none border-r-2 border-r-hedara-purple text-right bg-white/5'
-        }`}
-      >
-        <p className={`text-sm md:text-base leading-relaxed ${isAI ? 'text-zinc-200' : 'text-white'}`}>
-          {content}
-        </p>
-        
-        {/* Subtle glow effect for AI messages */}
-        {isAI && (
-          <div className="absolute -inset-1 bg-electric-cyan/10 blur-xl -z-10 rounded-full opacity-50"></div>
-        )}
-      </div>
+    <div className={`flex w-full mb-2 font-mono text-sm md:text-base`}>
+      {isAI ? (
+        <div className="flex gap-4 text-[#00F2FF]">
+          <span className="opacity-50 select-none">[SYSTEM_LOG]</span>
+          <p className="leading-relaxed whitespace-pre-wrap">{content}</p>
+        </div>
+      ) : (
+        <div className="flex gap-4 text-[#00F2FF]">
+          <span className="opacity-80 select-none font-bold">{">"}</span>
+          <p className="leading-relaxed whitespace-pre-wrap opacity-90">{content}</p>
+        </div>
+      )}
     </div>
   );
 }

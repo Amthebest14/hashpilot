@@ -1,20 +1,38 @@
 import Navbar from './components/Navbar'
 import ChatBox from './components/ChatBox'
+import HistorySidebar, { useHistory } from './components/HistorySidebar'
 
 function App() {
-  return (
-    <div className="min-h-screen w-full bg-deep-obsidian relative overflow-hidden selection:bg-electric-cyan selection:text-deep-obsidian">
-      {/* Dynamic Background Grid */}
-      <div className="fixed inset-0 bg-grid-hashgraph pointer-events-none z-0 opacity-40"></div>
-      
-      {/* Decorative Glows */}
-      <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-electric-cyan/5 blur-[120px] rounded-full pointer-events-none"></div>
-      <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-hedara-purple/5 blur-[120px] rounded-full pointer-events-none"></div>
+  const { sessions, activeSessionId, setActiveSessionId, createNewSession, updateActiveSession } = useHistory();
 
-      <div className="relative z-10 flex flex-col h-screen">
+  const activeSession = sessions.find(s => s.id === activeSessionId);
+
+  return (
+    <div className="min-h-screen w-full bg-deep-obsidian text-electric-cyan relative overflow-hidden selection:bg-electric-cyan selection:text-deep-obsidian flex">
+      {/* Dynamic Background Grid */}
+      <div className="fixed inset-0 bg-grid-hashgraph pointer-events-none z-0 opacity-20"></div>
+      
+      {/* 20% Sidebar */}
+      <div className="w-1/5 relative z-10 hidden md:block">
+        <HistorySidebar 
+          sessions={sessions} 
+          activeSessionId={activeSessionId} 
+          onSelectSession={setActiveSessionId}
+          onNewSession={createNewSession}
+        />
+      </div>
+
+      {/* 80% Main Terminal */}
+      <div className="flex-1 relative z-10 flex flex-col h-screen overflow-hidden">
         <Navbar />
         <main className="flex-1 overflow-hidden">
-          <ChatBox />
+          {activeSession && (
+            <ChatBox 
+              key={activeSession.id} // Re-mount when session changes
+              session={activeSession} 
+              onUpdateSession={updateActiveSession} 
+            />
+          )}
         </main>
       </div>
     </div>

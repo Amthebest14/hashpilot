@@ -1,33 +1,54 @@
+export type IntentType = 
+  | 'check_balance'
+  | 'transfer_token'
+  | 'swap_token'
+  | 'create_token'
+  | 'stake_hbar'
+  | 'unstake_hbar'
+  | 'wrap_hbar'
+  | 'airdrop_tokens'
+  | 'mint_nft'
+  | 'get_market_data'
+  | 'conversational';
+
+export type SupportedParameters = {
+  amount?: string;
+  destination?: string;
+  tokenIn?: string;
+  tokenOut?: string;
+  asset?: string;
+  [key: string]: any;
+};
+
 export type AIResponse = {
-  text: string;
-  intent?: {
-    type: 'TRANSFER';
-    amount: string;
-    token: string;
-    target: string;
-  };
+  intent: IntentType;
+  parameters: SupportedParameters;
+  reply: string;
 };
 
 export const queryAI = async (message: string): Promise<AIResponse> => {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 1500));
+  try {
+    const response = await fetch('/api/intent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message }),
+    });
 
-  const lowerMsg = message.toLowerCase();
+    if (!response.ok) {
+      throw new Error(`API returned status: ${response.status}`);
+    }
 
-  if (lowerMsg.includes('send') || lowerMsg.includes('transfer')) {
-    // Mock parsing an intent
+    const data: AIResponse = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error querying AI:', error);
+    // Return a conversational fallback in case of error
     return {
-      text: "I've detected a transfer intent. Please confirm the details in the preview card below.",
-      intent: {
-        type: 'TRANSFER',
-        amount: '10',
-        token: 'HBAR',
-        target: '0.0.123456'
-      }
+      intent: 'conversational',
+      parameters: {},
+      reply: '[SYSTEM_ERROR] Failed to establish neural link.'
     };
   }
-
-  return {
-    text: "I am Hashpilot, your Hedera Copilot. How can I help you interact with the hashgraph today?"
-  };
 };

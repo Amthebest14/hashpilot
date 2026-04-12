@@ -2,17 +2,16 @@
 
 @theme {
   --color-electric-cyan: #00F2FF;
-  --color-deep-obsidian: #050505;
-  --color-hedara-purple: #8B3DFF;
+  --color-deep-obsidian: #0A0A0A;
 }
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', Courier, monospace;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: dark;
-  color: rgba(255, 255, 255, 0.87);
+  color: var(--color-electric-cyan);
   background-color: var(--color-deep-obsidian);
 
   font-synthesis: none;
@@ -27,6 +26,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background-color: var(--color-deep-obsidian);
+  color: var(--color-electric-cyan);
   overflow: hidden;
 }
 
@@ -34,27 +34,39 @@ body {
   width: 100%;
 }
 
-/* Cyber-Minimalist Grid Pattern */
+/* Cyber-Minimalist Terminal Grid */
 .bg-grid-hashgraph {
   background-image: 
     linear-gradient(to right, rgba(0, 242, 255, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(0, 242, 255, 0.05) 1px, transparent 1px);
-  background-size: 40px 40px;
+  background-size: 20px 20px;
 }
 
 .glow-cyan {
-  text-shadow: 0 0 10px rgba(0, 242, 255, 0.5), 0 0 20px rgba(0, 242, 255, 0.3);
+  text-shadow: 0 0 5px rgba(0, 242, 255, 0.7), 0 0 15px rgba(0, 242, 255, 0.5);
 }
 
 .border-glow-cyan {
-  box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+  box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
 }
 
-.glass-panel {
-  background: rgba(10, 10, 10, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.terminal-panel {
+  background: transparent;
+  border: 1px solid var(--color-electric-cyan);
+}
+
+/* Scrollbar customization for terminal look */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-deep-obsidian); 
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 242, 255, 0.3); 
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 242, 255, 0.6); 
 }
 
 /* Animations */

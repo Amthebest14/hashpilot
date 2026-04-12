@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Send } from 'lucide-react';
 
 type ChatInputProps = {
   onSend: (message: string) => void;
@@ -18,29 +17,23 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   };
 
   return (
-    <div className="fixed inset-x-0 bottom-0 py-10 px-4 bg-gradient-to-t from-deep-obsidian via-deep-obsidian to-transparent z-30">
+    <div className="w-full px-4 pt-4 pb-6 bg-[#0A0A0A] z-30 border-t border-[#00F2FF]/20">
       <form 
         onSubmit={handleSubmit}
-        className="w-full max-w-4xl mx-auto relative group"
+        className="w-full flex items-center font-mono text-sm md:text-base text-[#00F2FF]"
       >
-        <div className="absolute -inset-1 bg-gradient-to-r from-electric-cyan to-hedara-purple rounded-2xl blur opacity-25 group-focus-within:opacity-100 transition duration-500"></div>
-        <div className="relative">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={disabled}
-            placeholder="What would you like to execute on Hedera today?"
-            className="w-full bg-[#0a0a0a] border border-white/10 text-white rounded-2xl py-5 px-8 pr-16 focus:outline-none focus:border-electric-cyan/50 transition-all font-medium text-lg placeholder-zinc-600"
-          />
-          <button 
-            type="submit"
-            disabled={!input.trim() || disabled}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-3 bg-electric-cyan text-deep-obsidian rounded-xl hover:bg-white transition-all disabled:opacity-50 disabled:grayscale"
-          >
-            <Send size={22} />
-          </button>
-        </div>
+        <span className="opacity-80 select-none mr-3 font-bold">{">"}</span>
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          disabled={disabled}
+          placeholder="Enter command..."
+          className="flex-1 bg-transparent border-none text-[#00F2FF] outline-none placeholder-[#00F2FF]/30 selection:bg-[#00F2FF] selection:text-[#0A0A0A]"
+          autoFocus
+        />
+        {/* Invisible button to handle enter press properly */}
+        <button type="submit" className="hidden" disabled={!input.trim() || disabled}>Send</button>
       </form>
     </div>
   );

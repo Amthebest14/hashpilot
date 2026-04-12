@@ -1,17 +1,19 @@
 import { useState, useRef, useEffect } from 'react';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
-import TransactionPreviewCard from './TransactionPreviewCard';
 import { queryAI } from '../services/aiService';
-import type { AIResponse } from '../services/aiService';
+import { useActionRouter } from '../services/ActionRouter';
+import type { ChatSession } from './HistorySidebar';
 
-export default function ChatBox() {
-  const [messages, setMessages] = useState<{ role: 'user' | 'ai'; content: string }[]>([
-    { role: 'ai', content: "System initialized. I am Hashpilot. Deploying intent-based protocols... How may I assist your Hedera journey today?" }
-  ]);
+type ChatBoxProps = {
+  session: ChatSession;
+  onUpdateSession: (messages: { role: 'user' | 'ai'; content: string }[], newTitle?: string) => void;
+};
+
+export default function ChatBox({ session, onUpdateSession }: ChatBoxProps) {
   const [isThinking, setIsThinking] = useState(false);
-  const [activeIntent, setActiveIntent] = useState<AIResponse['intent'] | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const { handleIntent } = useActionRouter();
 
   const scrollToBottom = () => {
     if (scrollContainerRef.current) {
@@ -24,60 +26,58 @@ export default function ChatBox() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isThinking]);
+  }, [session.messages, isThinking]);
 
   const handleSend = async (text: string) => {
-    // Add user message
-    setMessages((prev) => [...prev, { role: 'user', content: text }]);
+    const newMessages = [...session.messages, { role: 'user' as const, content: text }];
+    onUpdateSession(newMessages); // optimistic update
     setIsThinking(true);
-    setActiveIntent(null);
 
     try {
       const response = await queryAI(text);
-      setMessages((prev) => [...prev, { role: 'ai', content: response.text }]);
       
-      if (response.intent) {
-        setActiveIntent(response.intent);
+      const updatedAiMessages = [...newMessages, { role: 'ai' as const, content: response.reply }];
+      onUpdateSession(updatedAiMessages); // update with AI reply text first
+      
+      // Attempt action routing if intent is anything other than conversational
+      if (response.intent !== 'conversational') {
+        try {
+          const txResponse = await handleIntent(response);
+          if (txResponse) {
+             onUpdateSession([...updatedAiMessages, { role: 'ai' as const, content: `[ACTION_SUCCESS] Hash: ${txResponse}` }]);
+          }
+        } catch (actionErr: any) {
+           onUpdateSession([...updatedAiMessages, { role: 'ai' as const, content: `[ACTION_FAILED] ${actionErr.message}` }]);
+        }
       }
     } catch (error) {
-      setMessages((prev) => [...prev, { role: 'ai', content: "Error connecting to neural link. Please try again." }]);
+      onUpdateSession([...newMessages, { role: 'ai' as const, content: "[SYSTEM_ERROR] Neural link disconnected." }]);
     } finally {
       setIsThinking(false);
     }
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] w-full max-w-5xl mx-auto px-4 relative">
+    <div className="flex flex-col h-full w-full pl-6 pr-4 relative">
       <div 
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto pt-10 pb-40 no-scrollbar space-y-2"
+        className="flex-1 overflow-y-auto pt-6 pb-20 no-scrollbar space-y-1"
       >
-        {messages.map((msg, idx) => (
+        {session.messages.map((msg, idx) => (
           <ChatMessage key={idx} role={msg.role} content={msg.content} />
         ))}
         
         {isThinking && (
-          <div className="flex justify-start mb-6 animate-pulse">
-            <div className="px-6 py-4 rounded-2xl glass-panel text-electric-cyan font-bold tracking-widest text-xs uppercase flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-electric-cyan rounded-full animate-bounce"></span>
-              <span className="w-1.5 h-1.5 bg-electric-cyan rounded-full animate-bounce [animation-delay:0.2s]"></span>
-              <span className="w-1.5 h-1.5 bg-electric-cyan rounded-full animate-bounce [animation-delay:0.4s]"></span>
-              Thinking
-            </div>
+          <div className="flex w-full mb-2 font-mono text-sm md:text-base text-[#00F2FF]">
+            <span className="opacity-50 select-none mr-4">[SYSTEM_LOG]</span>
+            <span className="animate-pulse">Processing...</span>
           </div>
         )}
       </div>
 
-      <TransactionPreviewCard 
-        intent={activeIntent || null} 
-        onConfirm={() => {
-          setMessages(prev => [...prev, { role: 'ai', content: "Transaction submitted to Hedera Hashgraph. Awaiting consensus..." }]);
-          setActiveIntent(null);
-        }}
-        onCancel={() => setActiveIntent(null)}
-      />
-
-      <ChatInput onSend={handleSend} disabled={isThinking} />
+      <div className="absolute bottom-0 left-0 right-0">
+        <ChatInput onSend={handleSend} disabled={isThinking} />
+      </div>
     </div>
   );
 }
