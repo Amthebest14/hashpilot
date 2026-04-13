@@ -7,6 +7,7 @@ import type { ChatSession, ChatMessage } from './HistorySidebar';
 import TransactionCard from './TransactionCard';
 import { v4 as uuidv4 } from 'uuid';
 import { resolveHederaAddress, getHederaBalance } from '../services/hederaService';
+import { useSendTransaction, useAccount } from 'wagmi';
 
 type ChatBoxProps = {
   session: ChatSession;
@@ -17,6 +18,7 @@ export default function ChatBox({ session, onUpdateSession }: ChatBoxProps) {
   const [isThinking, setIsThinking] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { getExecutableFunction } = useActionRouter();
+  const { address } = useAccount();
 
   const onUpdateTxState = (msgId: string, status: 'idle' | 'pending' | 'success' | 'error', hash?: string | null) => {
     const updatedMessages = session.messages.map(m => 
@@ -58,14 +60,24 @@ export default function ChatBox({ session, onUpdateSession }: ChatBoxProps) {
 
         if (intent === 'check_balance') {
           try {
-            const target = params.targetAddress || '0.0.unknown'; // Simple fallback
-            const nativeId = await resolveHederaAddress(target);
-            const balance = await getHederaBalance(nativeId);
-            aiMessages.push({
-              id: uuidv4(),
-              role: 'ai',
-              content: `[SYSTEM] Balance for ${nativeId}: ${balance.hbar} HBAR`
-            });
+            const target = params.targetAddress || address;
+            if (!target) {
+              aiMessages.push({ id: uuidv4(), role: 'ai', content: "Please connect your wallet or specify an account to check a balance." });
+            } else {
+              const nativeId = await resolveHederaAddress(target);
+              const balance = await getHederaBalance(nativeId);
+              
+              let balanceReply = `[SYSTEM] Balance for ${nativeId}:\n- ${balance.hbar} HBAR`;
+              if (balance.formattedTokens.length > 0) {
+                balanceReply += `\n- ${balance.formattedTokens.join('\n- ')}`;
+              }
+              
+              aiMessages.push({
+                id: uuidv4(),
+                role: 'ai',
+                content: balanceReply
+              });
+            }
           } catch (err) {
             aiMessages.push({ id: uuidv4(), role: 'ai', content: "I couldn't retrieve the balance right now." });
           }
