@@ -7,7 +7,7 @@ import type { ChatSession, ChatMessage } from './HistorySidebar';
 import TransactionCard from './TransactionCard';
 import { v4 as uuidv4 } from 'uuid';
 import { resolveHederaAddress, getHederaBalance } from '../services/hederaService';
-import { useSendTransaction, useAccount } from 'wagmi';
+import { useAccount } from 'wagmi';
 
 type ChatBoxProps = {
   session: ChatSession;
