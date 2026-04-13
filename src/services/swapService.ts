@@ -49,9 +49,17 @@ export async function prepareSaucerSwap(
 
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 60 * 20); // 20 mins
 
-  // For HBAR -> Token swaps, we use the V1 swapExactETHForTokens
-  // This function handles the wrapping of HBAR automatically
-  const path = [tokenIn as `0x${string}`, tokenOut as `0x${string}`];
+  // V1 Uniswap V2 Architecture requires exact liquidity paths.
+  // HBAR (WHBAR) has deep pools with SAUCE. 
+  // XSAUCE and USDC typically require a route through SAUCE on Testnet V1.
+  let path: `0x${string}`[] = [];
+  
+  if (tin === 'HBAR' && (tout === 'XSAUCE' || tout === 'USDC')) {
+    const sauce = TESTNET_TOKENS['SAUCE'] as `0x${string}`;
+    path = [tokenIn as `0x${string}`, sauce, tokenOut as `0x${string}`];
+  } else {
+    path = [tokenIn as `0x${string}`, tokenOut as `0x${string}`];
+  }
 
   const encodedData = encodeFunctionData({
     abi: SAUCERSWAP_V1_ABI,
