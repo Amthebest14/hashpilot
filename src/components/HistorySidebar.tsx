@@ -3,11 +3,22 @@ import { v4 as uuidv4 } from 'uuid';
 import { Plus, MessageSquare, Zap } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
+export type ChatMessage = {
+  id: string;
+  role: 'user' | 'ai';
+  content: string;
+  isTransaction?: boolean;
+  intent?: string;
+  parameters?: any;
+  txStatus?: 'idle' | 'pending' | 'success' | 'error';
+  txHash?: string | null;
+};
+
 export type ChatSession = {
   id: string;
-  wallet_address: string; // Match DB schema
+  wallet_address: string;
   title: string;
-  messages: { role: 'user' | 'ai'; content: string }[];
+  messages: ChatMessage[];
   created_at?: string;
 };
 
@@ -42,7 +53,11 @@ export function useHistory(walletId: string | undefined) {
               id: uuidv4(),
               wallet_address: walletId,
               title: 'New Conversation',
-              messages: [{ role: 'ai', content: "Hello! I'm Hashpilot, your Hedera copilot. How can I assist you today?" }]
+              messages: [{ 
+                id: uuidv4(),
+                role: 'ai', 
+                content: "Hello! I'm Hashpilot, your Hedera copilot. How can I assist you today?" 
+              }]
             };
             await supabase.from('chat_sessions').insert([newSession]);
             setSessions([newSession]);
@@ -75,7 +90,11 @@ export function useHistory(walletId: string | undefined) {
         id: uuidv4(),
         wallet_address: 'guest',
         title: 'New Conversation',
-        messages: [{ role: 'ai', content: "Hello! I'm Hashpilot, your Hedera copilot. How can I assist you today?" }]
+        messages: [{ 
+          id: uuidv4(),
+          role: 'ai', 
+          content: "Hello! I'm Hashpilot, your Hedera copilot. How can I assist you today?" 
+        }]
       };
       setSessions([guestSession]);
       setActiveSessionId(guestSession.id);
@@ -90,7 +109,11 @@ export function useHistory(walletId: string | undefined) {
       id: uuidv4(),
       wallet_address: walletId || 'guest',
       title: 'New Conversation',
-      messages: [{ role: 'ai', content: "Hello! I'm Hashpilot, your Hedera copilot. How can I assist you today?" }]
+      messages: [{ 
+        id: uuidv4(),
+        role: 'ai', 
+        content: "Hello! I'm Hashpilot, your Hedera copilot. How can I assist you today?" 
+      }]
     };
 
     if (walletId) {
@@ -105,7 +128,7 @@ export function useHistory(walletId: string | undefined) {
     if (!walletId) localStorage.setItem('hashpilot_sessions', JSON.stringify(updated));
   };
 
-  const updateActiveSession = useCallback(async (messages: { role: 'user' | 'ai'; content: string }[], newTitle?: string) => {
+  const updateActiveSession = useCallback(async (messages: ChatMessage[], newTitle?: string) => {
     const active = sessions.find(s => s.id === activeSessionId);
     if (!active) return;
 

@@ -1,7 +1,5 @@
 import { useSendTransaction, useAccount } from 'wagmi';
 import { parseEther } from 'viem';
-import type { AIResponse } from './aiService';
-import { getHederaBalance, resolveHederaAddress } from './hederaService';
 import { prepareSaucerSwap } from './swapService';
 
 // Helper to convert 0.0.x to 0x if needed for viem validation
@@ -24,82 +22,42 @@ export function useActionRouter() {
   const { sendTransactionAsync } = useSendTransaction();
   const { isConnected, address } = useAccount();
 
-  const handleIntent = async (aiResponse: AIResponse): Promise<string | null> => {
+  const getExecutableFunction = (intent: string, parameters: any): (() => Promise<string>) | null => {
     if (!isConnected) {
-      throw new Error('Wallet not connected. Please connect your wallet first.');
+      return async () => { throw new Error('Wallet not connected.'); };
     }
 
-    const { intent, parameters } = aiResponse;
-
     switch (intent) {
-      case 'check_balance': {
-        try {
-          const target = parameters.targetAddress || address!;
-          const nativeId = await resolveHederaAddress(target);
-          const balance = await getHederaBalance(nativeId);
-          return `[SYS_MSG] Balance for ${nativeId}: ${balance.hbar} HBAR`;
-        } catch (err: any) {
-          console.error('[ACTION_ROUTER] Balance check failed:', err);
-          throw new Error('I could not retrieve the balance at this moment.');
-        }
-      }
-
       case 'transfer_token': {
-        const { amount, destination } = parameters;
-        
-        if (!amount) throw new Error('Missing amount for transfer.');
-        if (!destination) throw new Error('I couldn\'t identify where you want to send the tokens.');
-
-        try {
+        return async () => {
+          const { amount, destination } = parameters;
+          if (!amount || !destination) throw new Error('Missing transfer details.');
           const toAddress = await ensureEvmAddress(destination);
-          
-          const txHash = await sendTransactionAsync({
+          return await sendTransactionAsync({
             to: toAddress,
             value: parseEther(amount),
           });
-          
-          return `[TX_HASH] ${txHash}`;
-        } catch (err: any) {
-          if (err.message?.includes('User rejected') || err.name === 'UserRejectedRequestError') {
-             throw new Error('Transaction rejected by user.');
-          }
-          throw err;
-        }
+        };
       }
 
       case 'swap_token': {
-        const { amount, tokenIn, tokenOut } = parameters;
-
-        if (!amount || !tokenIn || !tokenOut) {
-          throw new Error('Missing details for the swap. I need the amount and both tokens.');
-        }
-
-        try {
+        return async () => {
+          const { amount, tokenIn, tokenOut } = parameters;
+          if (!amount || !tokenIn || !tokenOut) throw new Error('Missing swap details.');
           const swapTx = await prepareSaucerSwap(tokenIn, tokenOut, amount, address!);
-          
-          // Reverting to sendTransactionAsync which is proven to work for HBAR transfers.
-          // We include the data and manual gas limit to fix the swap execution.
-          const txHash = await sendTransactionAsync({
+          return await sendTransactionAsync({
             to: swapTx.to,
             data: swapTx.data,
             value: swapTx.value,
-            gas: 3000000n, // Hardcode 3M gas for complex contract call
+            gas: 3000000n,
           });
-
-          return `[TX_HASH] ${txHash}`;
-        } catch (err: any) {
-          if (err.message?.includes('User rejected') || err.name === 'UserRejectedRequestError') {
-            throw new Error('Transaction rejected by user.');
-          }
-          console.error('[ACTION_ROUTER] Swap failed:', err);
-          throw new Error(err.message || 'Swap execution failed.');
-        }
+        };
       }
-      
+
       default:
         return null;
     }
   };
 
-  return { handleIntent };
+  return { getExecutableFunction };
 }

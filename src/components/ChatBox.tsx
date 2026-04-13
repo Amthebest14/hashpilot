@@ -1,19 +1,29 @@
 import { useState, useRef, useEffect } from 'react';
-import ChatMessage from './ChatMessage';
+import ChatMessageComponent from './ChatMessage';
 import ChatInput from './ChatInput';
 import { queryAI } from '../services/aiService';
 import { useActionRouter } from '../services/ActionRouter';
-import type { ChatSession } from './HistorySidebar';
+import type { ChatSession, ChatMessage } from './HistorySidebar';
+import TransactionCard from './TransactionCard';
+import { v4 as uuidv4 } from 'uuid';
+import { resolveHederaAddress, getHederaBalance } from '../services/hederaService';
 
 type ChatBoxProps = {
   session: ChatSession;
-  onUpdateSession: (messages: { role: 'user' | 'ai'; content: string }[], newTitle?: string) => void;
+  onUpdateSession: (messages: ChatMessage[], newTitle?: string) => void;
 };
 
 export default function ChatBox({ session, onUpdateSession }: ChatBoxProps) {
   const [isThinking, setIsThinking] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const { handleIntent } = useActionRouter();
+  const { getExecutableFunction } = useActionRouter();
+
+  const onUpdateTxState = (msgId: string, status: 'idle' | 'pending' | 'success' | 'error', hash?: string | null) => {
+    const updatedMessages = session.messages.map(m => 
+      m.id === msgId ? { ...m, txStatus: status, txHash: hash } : m
+    );
+    onUpdateSession(updatedMessages);
+  };
 
   const scrollToBottom = () => {
     if (scrollContainerRef.current) {
@@ -29,43 +39,58 @@ export default function ChatBox({ session, onUpdateSession }: ChatBoxProps) {
   }, [session.messages, isThinking]);
 
   const handleSend = async (text: string) => {
-    const newMessages = [...session.messages, { role: 'user' as const, content: text }];
+    const userMsg: ChatMessage = { id: uuidv4(), role: 'user', content: text };
+    const newMessages = [...session.messages, userMsg];
     onUpdateSession(newMessages); // optimistic update
     setIsThinking(true);
 
     try {
       const response = await queryAI(text);
-      
-      const updatedAiMessages = [...newMessages, { role: 'ai' as const, content: response.reply }];
-      onUpdateSession(updatedAiMessages); 
-      
-      // Attempt action routing if intent is anything other than conversational
-      if (response.intent !== 'conversational') {
-        try {
-          const txResponse = await handleIntent(response);
-          if (txResponse) {
-             let finalMessage = txResponse;
-             
-             if (txResponse.startsWith('[SYS_MSG] ')) {
-                finalMessage = txResponse.replace('[SYS_MSG] ', '');
-             } else if (txResponse.startsWith('[TX_HASH] ')) {
-                const hash = txResponse.replace('[TX_HASH] ', '');
-                finalMessage = `Transaction confirmed! ✅ View it on Hashscan: https://hashscan.io/testnet/transaction/${hash}`;
-             }
+      let aiMessages: ChatMessage[] = [...newMessages, { 
+        id: uuidv4(),
+        role: 'ai' as const, 
+        content: response.reply 
+      }];
 
-             onUpdateSession([...updatedAiMessages, { role: 'ai' as const, content: finalMessage }]);
+      if (response.intent !== 'conversational') {
+        const intent = response.intent;
+        const params = response.parameters;
+
+        if (intent === 'check_balance') {
+          try {
+            const target = params.targetAddress || '0.0.unknown'; // Simple fallback
+            const nativeId = await resolveHederaAddress(target);
+            const balance = await getHederaBalance(nativeId);
+            aiMessages.push({
+              id: uuidv4(),
+              role: 'ai',
+              content: `[SYSTEM] Balance for ${nativeId}: ${balance.hbar} HBAR`
+            });
+          } catch (err) {
+            aiMessages.push({ id: uuidv4(), role: 'ai', content: "I couldn't retrieve the balance right now." });
           }
-        } catch (actionErr: any) {
-           // Improved error handling for specific cases like rejections
-           const errorContent = actionErr.message === 'Transaction rejected by user.' 
-             ? actionErr.message 
-             : `I ran into an issue: ${actionErr.message}`;
-             
-           onUpdateSession([...updatedAiMessages, { role: 'ai' as const, content: errorContent }]);
+        } else {
+          // It's a transaction intent (swap, transfer, etc)
+          aiMessages.push({
+            id: uuidv4(),
+            role: 'ai',
+            content: '', // Empty content as the card will be the main UI
+            isTransaction: true,
+            intent: intent,
+            parameters: params,
+            txStatus: 'idle',
+            txHash: null
+          });
         }
       }
+      
+      onUpdateSession(aiMessages);
     } catch (error) {
-      onUpdateSession([...newMessages, { role: 'ai' as const, content: "I'm sorry, I'm having trouble connecting to my brain right now. Please try again soon!" }]);
+      onUpdateSession([...newMessages, { 
+        id: uuidv4(),
+        role: 'ai' as const, 
+        content: "I'm sorry, I'm having trouble connecting to my brain right now. Please try again soon!" 
+      }]);
     } finally {
       setIsThinking(false);
     }
@@ -78,7 +103,25 @@ export default function ChatBox({ session, onUpdateSession }: ChatBoxProps) {
         className="flex-1 overflow-y-auto pt-10 pb-40 no-scrollbar space-y-4"
       >
         {session.messages.map((msg, idx) => (
-          <ChatMessage key={idx} role={msg.role} content={msg.content} />
+          <div key={msg.id || idx}>
+            {msg.content && (
+              <ChatMessageComponent role={msg.role} content={msg.content} />
+            )}
+            
+            {msg.isTransaction && (
+              <div className="flex justify-start mb-8 ml-8">
+                <TransactionCard 
+                  msgId={msg.id}
+                  intent={msg.intent!}
+                  parameters={msg.parameters}
+                  initialStatus={msg.txStatus as any || 'idle'}
+                  initialHash={msg.txHash}
+                  onExecute={getExecutableFunction(msg.intent!, msg.parameters)!}
+                  onUpdateState={(status, hash) => onUpdateTxState(msg.id, status, hash)}
+                />
+              </div>
+            )}
+          </div>
         ))}
         
         {isThinking && (
