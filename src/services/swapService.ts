@@ -4,10 +4,12 @@ import { encodeFunctionData, parseEther } from 'viem';
 const SAUCERSWAP_V1_ROUTER = '0x0000000000000000000000000000000000004b40'; // Entity ID 0.0.19264
 
 // Token Mappings (Testnet)
-const TOKENS = {
-  'HBAR':  '0x0000000000000000000000000000000000003ad2', // WHBAR Token ID (0.0.15058)
-  'WHBAR': '0x0000000000000000000000000000000000003ad2',
-  'SAUCE': '0x0000000000000000000000000000000000120f46', // Testnet SAUCE (0.0.1183558)
+const TESTNET_TOKENS: Record<string, string> = {
+  'HBAR': '0x0000000000000000000000000000000000003ad1',
+  'WHBAR': '0x0000000000000000000000000000000000003ad1',
+  'SAUCE': '0x0000000000000000000000000000000000120f46',
+  'XSAUCE': '0x000000000000000000000000000000000015a59b',
+  'USDC': '0x0000000000000000000000000000000000068cda'
 };
 
 // V1 Router ABI (Uniswap V2 based)
@@ -35,8 +37,8 @@ export async function prepareSaucerSwap(
   const tin = tokenInName.toUpperCase();
   const tout = tokenOutName.toUpperCase();
 
-  const tokenIn = TOKENS[tin as keyof typeof TOKENS];
-  const tokenOut = TOKENS[tout as keyof typeof TOKENS];
+  const tokenIn = TESTNET_TOKENS[tin as keyof typeof TESTNET_TOKENS];
+  const tokenOut = TESTNET_TOKENS[tout as keyof typeof TESTNET_TOKENS];
 
   if (!tokenIn || !tokenOut) {
     throw new Error(`Unsupported token pairing: ${tin} to ${tout}`);

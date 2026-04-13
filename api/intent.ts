@@ -74,6 +74,8 @@ export default async function handler(req: Request) {
       1. Map the request to a valid intent and extract parameters.
       2. For 'check_balance': If they mention a specific account (e.g. "What's the balance of 0.0.123?"), extract that into 'targetAddress'. Otherwise, leave it empty.
       3. For 'swap_token': Strictly extract 'tokenIn', 'tokenOut', and 'amount'.
+         - IMPORTANT: When extracting 'tokenIn' and 'tokenOut', you must strictly use asset ticker symbols (e.g., HBAR, SAUCE, XSAUCE, USDC) and output them as UPPERCASE strings.
+         - Do not extract or assume any other tokens.
       4. For 'transfer_token': Pay close attention to the destination address. Hedera users often use the format '0.0.xxxxx'. You MUST extract this exactly as provided. If they provide an EVM '0x' address, extract that instead.
       5. In the 'reply' field, provide a natural, encouraging confirmation (e.g., "Sure! I've prepared that balance check for you." or "I've drafted that HBAR swap to SAUCE. Check the details below!")
 
