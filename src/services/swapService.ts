@@ -42,10 +42,6 @@ export async function prepareSaucerSwap(
     throw new Error(`Unsupported token pairing: ${tin} to ${tout}`);
   }
 
-  // Precision check: HBAR/SAUCE Usually 8 or 6.
-  const decimals = tin === 'HBAR' ? 8 : 6;
-  const amountIn = parseUnits(amount, decimals);
-  
   // Hedera EVM uses 18-decimal weibars for msg.value
   const txValue = tin === 'HBAR' ? parseEther(amount) : 0n;
 
