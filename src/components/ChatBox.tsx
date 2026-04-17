@@ -9,8 +9,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { resolveHederaAddress, getHederaBalance } from '../services/hederaService';
 import { useAccount } from 'wagmi';
 
-import { getTopTokensByVolume } from '../services/marketService';
-
 type ChatBoxProps = {
   session: ChatSession;
   onUpdateSession: (messages: ChatMessage[], newTitle?: string) => void;

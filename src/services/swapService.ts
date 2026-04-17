@@ -1,4 +1,4 @@
-import { encodeFunctionData, parseEther } from 'viem';
+import { encodeFunctionData } from 'viem';
 
 // SaucerSwap V1 Testnet Router
 const SAUCERSWAP_V1_ROUTER = '0x0000000000000000000000000000000000004b40'; // Entity ID 0.0.19264
