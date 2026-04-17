@@ -29,7 +29,7 @@ export default function SplashPage({ onEnter }: SplashPageProps) {
         >
           <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
           <span className="relative z-10 text-[11px] font-black uppercase tracking-[0.3em]">
-            [ Enter Terminal ]
+            [ Launch Copilot ]
           </span>
         </button>
       </div>

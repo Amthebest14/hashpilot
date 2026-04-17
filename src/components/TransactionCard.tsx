@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ExternalLink, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { awardHP } from '../services/hpService';
 import { useAccount } from 'wagmi';
+import toast from 'react-hot-toast';
 
 type TxStatus = 'idle' | 'pending' | 'success' | 'error';
 
@@ -37,10 +38,12 @@ export default function TransactionCard({
       setStatus('success');
       onUpdateState('success', txHash);
 
-      // Award HP on success
+      // Award HP and Toast on success
       if (address) {
         const hpAmount = intent === 'swap_token' ? 25 : 10;
-        awardHP(address, hpAmount).catch(e => console.error('[TX_CARD] HP Award failed:', e));
+        awardHP(address, hpAmount).then(() => {
+          toast.success(intent === 'swap_token' ? '⚡ +25 HP REWARDED' : '⚡ +10 HP REWARDED');
+        }).catch(e => console.error('[TX_CARD] HP Award failed:', e));
       }
     } catch (err: any) {
       console.error('[TX_CARD] Execution failed:', err);
@@ -60,7 +63,7 @@ export default function TransactionCard({
         {/* Header */}
         <div className="px-5 py-3 border-b border-white/5 bg-white/5 flex items-center justify-between">
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
-            {status === 'success' ? 'Transaction Confirmed' : status === 'error' ? 'Transaction Failed' : 'System: Transaction Drafted'}
+            {status === 'success' ? 'Transaction Confirmed' : status === 'error' ? 'Transaction Failed' : 'Copilot: Transaction Drafted'}
           </span>
           {status === 'success' && <CheckCircle2 size={14} className="text-green-400" />}
           {status === 'error' && <XCircle size={14} className="text-red-400" />}

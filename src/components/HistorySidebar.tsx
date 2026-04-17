@@ -173,8 +173,8 @@ export default function HistorySidebar({
   onSelectSession: (id: string) => void;
   onNewSession: () => void;
   isLoading?: boolean;
-  activeTab: 'terminal' | 'leaderboard';
-  onTabChange: (tab: 'terminal' | 'leaderboard') => void;
+  activeTab: 'copilot' | 'leaderboard';
+  onTabChange: (tab: 'copilot' | 'leaderboard') => void;
 }) {
   return (
     <aside className="w-full h-full bg-main-blue/40 border-r border-white/5 flex flex-col pt-10 p-5 overflow-hidden">
@@ -196,15 +196,15 @@ export default function HistorySidebar({
             key={s.id}
             onClick={() => {
               onSelectSession(s.id);
-              onTabChange('terminal');
+              onTabChange('copilot');
             }}
             className={`w-full text-left px-5 py-4 rounded-2xl flex items-center gap-4 transition-all duration-300 ${
-              activeSessionId === s.id && activeTab === 'terminal'
+              activeSessionId === s.id && activeTab === 'copilot'
                 ? 'bg-white/10 text-white font-bold ring-1 ring-white/10' 
                 : 'text-white/50 hover:text-white/80 hover:bg-white/5'
             }`}
           >
-            <MessageSquare size={16} className={activeSessionId === s.id && activeTab === 'terminal' ? 'text-soft-purple' : 'text-white/20'} />
+            <MessageSquare size={16} className={activeSessionId === s.id && activeTab === 'copilot' ? 'text-soft-purple' : 'text-white/20'} />
             <span className="text-sm truncate leading-none mt-[2px]">{s.title}</span>
           </button>
         ))}
@@ -214,11 +214,11 @@ export default function HistorySidebar({
       <div className="flex flex-col gap-2 mb-6">
         <div className="text-[10px] uppercase text-white/20 mb-2 tracking-[0.2em] font-black ml-2">Navigation</div>
         <button 
-          onClick={() => onTabChange('terminal')}
-          className={`flex items-center gap-3 px-5 py-3 rounded-2xl transition-all ${activeTab === 'terminal' ? 'bg-soft-purple/10 text-white ring-1 ring-soft-purple/30' : 'text-white/40 hover:text-white/60 hover:bg-white/5'}`}
+          onClick={() => onTabChange('copilot')}
+          className={`flex items-center gap-3 px-5 py-3 rounded-2xl transition-all ${activeTab === 'copilot' ? 'bg-soft-purple/10 text-white ring-1 ring-soft-purple/30' : 'text-white/40 hover:text-white/60 hover:bg-white/5'}`}
         >
-          <div className={`w-1.5 h-1.5 rounded-full ${activeTab === 'terminal' ? 'bg-soft-purple' : 'bg-white/10'}`}></div>
-          <span className="text-[11px] font-black uppercase tracking-widest">[ Terminal ]</span>
+          <div className={`w-1.5 h-1.5 rounded-full ${activeTab === 'copilot' ? 'bg-soft-purple' : 'bg-white/10'}`}></div>
+          <span className="text-[11px] font-black uppercase tracking-widest">[ Copilot ]</span>
         </button>
         <button 
           onClick={() => onTabChange('leaderboard')}
@@ -231,7 +231,7 @@ export default function HistorySidebar({
 
       <div className="mt-auto pt-6 border-t border-white/5 flex flex-col gap-4">
         <div className="flex items-center gap-4 p-4 glass-panel rounded-2xl">
-           <div className="w-8 h-8 rounded-full bg-soft-purple/20 flex items-center justify-center text-soft-purple">
+           <div className="w-8 h-8 rounded-full bg-soft-purple/20 flex items-center justify-center text-soft-purple text-soft-purple">
              <Zap size={16} />
            </div>
            <div className="flex flex-col">

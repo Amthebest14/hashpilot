@@ -6,9 +6,11 @@ import HistorySidebar, { useHistory } from './components/HistorySidebar';
 import { resolveHederaAddress } from './services/hederaService';
 import ChatBox from './components/ChatBox';
 
+import { Toaster } from 'react-hot-toast';
+
 function App() {
   const [showApp, setShowApp] = useState(false);
-  const [activeTab, setActiveTab] = useState<'terminal' | 'leaderboard'>('terminal');
+  const [activeTab, setActiveTab] = useState<'copilot' | 'leaderboard'>('copilot');
   const { address, isConnected } = useAccount();
   const [localHederaId, setLocalHederaId] = useState<string | undefined>();
 
@@ -36,6 +38,24 @@ function App() {
 
   return (
     <div className="min-h-screen w-full bg-main-blue text-white relative overflow-hidden flex font-sans selection:bg-soft-purple selection:text-white">
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: '#0a0a1a', // main-blue fallback
+            color: '#fff',
+            border: '1px solid rgba(139, 92, 246, 0.3)', // soft-purple border
+            fontFamily: 'inherit',
+            fontSize: '11px',
+            fontWeight: '900',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            borderRadius: '16px',
+          },
+          duration: 3000,
+        }}
+      />
+      
       {/* Dynamic Aura Background */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-soft-purple/5 blur-[120px] rounded-full animate-float"></div>
@@ -58,7 +78,7 @@ function App() {
       {/* Main Area */}
       <div className="flex-1 h-screen relative z-10 flex flex-col overflow-hidden">
         <main className="flex-1 overflow-hidden flex flex-col">
-          {activeTab === 'terminal' ? (
+          {activeTab === 'copilot' ? (
             <div className="flex-1 overflow-hidden flex flex-col">
               {activeSession ? (
                 <ChatBox 
