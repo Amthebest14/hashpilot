@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { ExternalLink, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { awardHP } from '../services/hpService';
+import { useAccount } from 'wagmi';
 
 type TxStatus = 'idle' | 'pending' | 'success' | 'error';
 
@@ -23,6 +25,7 @@ export default function TransactionCard({
 }: TransactionCardProps) {
   const [status, setStatus] = useState<TxStatus>(initialStatus);
   const [hash, setHash] = useState<string | null>(initialHash);
+  const { address } = useAccount();
 
   const handleExecute = async () => {
     setStatus('pending');
@@ -33,6 +36,12 @@ export default function TransactionCard({
       setHash(txHash);
       setStatus('success');
       onUpdateState('success', txHash);
+
+      // Award HP on success
+      if (address) {
+        const hpAmount = intent === 'swap_token' ? 25 : 10;
+        awardHP(address, hpAmount).catch(e => console.error('[TX_CARD] HP Award failed:', e));
+      }
     } catch (err: any) {
       console.error('[TX_CARD] Execution failed:', err);
       setStatus('error');
