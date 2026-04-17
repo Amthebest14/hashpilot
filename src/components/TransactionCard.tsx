@@ -28,10 +28,12 @@ export default function TransactionCard({
 }: TransactionCardProps) {
   const [status, setStatus] = useState<TxStatus>(initialStatus);
   const [hash, setHash] = useState<string | null>(initialHash);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { address } = useAccount();
 
   const handleExecute = async () => {
     setStatus('pending');
+    setErrorMsg(null);
     onUpdateState('pending');
     
     try {
@@ -50,12 +52,14 @@ export default function TransactionCard({
     } catch (err: any) {
       console.error('[TX_CARD] Execution failed:', err);
       setStatus('error');
+      setErrorMsg(err.message || 'Unknown Transaction Error');
       onUpdateState('error');
     }
   };
 
   const resetToIdle = () => {
     setStatus('idle');
+    setErrorMsg(null);
     onUpdateState('idle');
   };
 
@@ -73,6 +77,14 @@ export default function TransactionCard({
 
         {/* content */}
         <div className="p-6 space-y-4">
+          {status === 'error' && errorMsg && (
+            <div className="px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-xl">
+               <span className="text-[9px] font-mono text-red-400 leading-tight block break-words">
+                 RAE_ERROR: {errorMsg.substring(0, 120)}{errorMsg.length > 120 ? '...' : ''}
+               </span>
+            </div>
+          )}
+
           <div className="flex flex-col gap-1">
             <span className="text-[11px] text-white/30 uppercase font-bold tracking-wider">Action</span>
             <span className="text-sm font-bold capitalize text-white flex items-center gap-2">

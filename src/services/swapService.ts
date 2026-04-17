@@ -25,8 +25,63 @@ const SAUCERSWAP_V1_ABI = [
     "outputs": [{ "internalType": "uint256[]", "name": "amounts", "type": "uint256[]" }],
     "stateMutability": "payable",
     "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "amountIn", "type": "uint256" },
+      { "internalType": "uint256", "name": "amountOutMin", "type": "uint256" },
+      { "internalType": "address[]", "name": "path", "type": "address[]" },
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "uint256", "name": "deadline", "type": "uint256" }
+    ],
+    "name": "swapExactTokensForETH",
+    "outputs": [{ "internalType": "uint256[]", "name": "amounts", "type": "uint256[]" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
 ] as const;
+
+const ERC20_ABI = [
+  {
+    "constant": false,
+    "inputs": [
+      { "name": "spender", "type": "address" },
+      { "name": "amount", "type": "uint256" }
+    ],
+    "name": "approve",
+    "outputs": [{ "name": "", "type": "boolean" }],
+    "type": "function"
+  }
+] as const;
+
+/**
+ * Prepares an ERC20 Approval transaction for the SaucerSwap Router.
+ * Required before swapping Tokens -> HBAR.
+ */
+export async function prepareApproval(
+  tokenSymbol: string,
+  amount: string
+) {
+  const sym = tokenSymbol.toUpperCase();
+  const tokenAddress = TESTNET_TOKENS[sym];
+  if (!tokenAddress) throw new Error(`Unsupported token for approval: ${sym}`);
+
+  // SAUCE uses 6 decimals
+  const decimals = sym === 'SAUCE' ? 6 : sym === 'HBAR' ? 8 : 18;
+  const rawAmount = BigInt(Math.floor(parseFloat(amount) * Math.pow(10, decimals)));
+
+  const encodedData = encodeFunctionData({
+    abi: ERC20_ABI,
+    functionName: 'approve',
+    args: [SAUCERSWAP_V1_ROUTER as `0x${string}`, rawAmount],
+  });
+
+  return {
+    to: tokenAddress as `0x${string}`,
+    data: encodedData,
+    value: 0n,
+  };
+}
 
 export async function prepareSaucerSwap(
   tokenInName: string,
@@ -44,32 +99,33 @@ export async function prepareSaucerSwap(
     throw new Error(`Unsupported token pairing: ${tin} to ${tout}`);
   }
 
-  // Hedera EVM uses 18-decimal weibars for msg.value
-  const txValue = tin === 'HBAR' ? parseEther(amount) : 0n;
-
+  // Token decimal handling
+  const tinDecimals = tin === 'SAUCE' ? 6 : tin === 'HBAR' ? 8 : 18;
+  const rawAmountIn = BigInt(Math.floor(parseFloat(amount) * Math.pow(10, tinDecimals)));
+  
+  // msg.value is only used for HBAR -> Token swaps
+  const txValue = tin === 'HBAR' ? rawAmountIn : 0n;
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 60 * 20); // 20 mins
 
-  // V1 Uniswap V2 Architecture requires exact liquidity paths.
-  // HBAR (WHBAR) has deep pools with SAUCE. 
-  // XSAUCE and USDC typically require a route through SAUCE on Testnet V1.
   let path: `0x${string}`[] = [];
-  
   if (tin === 'HBAR' && (tout === 'XSAUCE' || tout === 'USDC')) {
+    const sauce = TESTNET_TOKENS['SAUCE'] as `0x${string}`;
+    path = [tokenIn as `0x${string}`, sauce, tokenOut as `0x${string}`];
+  } else if (tout === 'HBAR' && (tin === 'XSAUCE' || tin === 'USDC')) {
     const sauce = TESTNET_TOKENS['SAUCE'] as `0x${string}`;
     path = [tokenIn as `0x${string}`, sauce, tokenOut as `0x${string}`];
   } else {
     path = [tokenIn as `0x${string}`, tokenOut as `0x${string}`];
   }
 
+  const isHbarIn = tin === 'HBAR';
+  
   const encodedData = encodeFunctionData({
     abi: SAUCERSWAP_V1_ABI,
-    functionName: 'swapExactETHForTokens',
-    args: [
-      0n, // amountOutMin: Setting to 0 for Testnet simplicity (slippage)
-      path,
-      userAddress as `0x${string}`,
-      deadline
-    ],
+    functionName: isHbarIn ? 'swapExactETHForTokens' : 'swapExactTokensForETH',
+    args: isHbarIn 
+      ? [0n, path, userAddress as `0x${string}`, deadline]
+      : [rawAmountIn, 0n, path, userAddress as `0x${string}`, deadline],
   });
 
   return {

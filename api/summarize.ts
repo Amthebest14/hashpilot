@@ -10,10 +10,34 @@ export default async function handler(req: Request) {
   }
 
   try {
-    const { data, query } = await req.json();
+    const { data: clientData, query } = await req.json();
 
-    if (!data || !query) {
-      return new Response(JSON.stringify({ error: 'Data and query are required' }), { status: 400 });
+    if (!query) {
+      return new Response(JSON.stringify({ error: 'Query is required' }), { status: 400 });
+    }
+
+    // Server-side fetch from SaucerSwap to bypass CORS
+    let marketData = clientData;
+    if (!marketData || Object.keys(marketData).length === 0) {
+      try {
+        const ssRes = await fetch('https://api.saucerswap.finance/tokens');
+        if (ssRes.ok) {
+          const tokens = await ssRes.json();
+          marketData = tokens
+            .map((t: any) => ({
+              symbol: t.symbol,
+              name: t.name,
+              priceUsd: parseFloat(t.priceUsd) || 0,
+              volume24hUsd: parseFloat(t.volume24hUsd) || 0,
+              liquidityUsd: parseFloat(t.liquidity) || 0,
+              tokenAddress: t.address
+            }))
+            .sort((a: any, b: any) => b.volume24hUsd - a.volume24hUsd)
+            .slice(0, 12);
+        }
+      } catch (err) {
+        console.error('SaucerSwap Fetch Error:', err);
+      }
     }
 
     const apiKey = process.env.GEMINI_API_KEY;

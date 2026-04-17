@@ -92,11 +92,10 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
           }
         } else if (intent === 'market_query') {
             try {
-              const marketData = await getTopTokensByVolume(12);
               const summaryRes = await fetch('/api/summarize', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ data: marketData, query: text })
+                body: JSON.stringify({ query: text })
               });
               const { summary } = await summaryRes.json();
               
