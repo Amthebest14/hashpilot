@@ -9,6 +9,8 @@ export type IntentType =
   | 'airdrop_tokens'
   | 'mint_nft'
   | 'get_market_data'
+  | 'analyze_wallet'
+  | 'market_query'
   | 'conversational';
 
 export type SupportedParameters = {

@@ -9,6 +9,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { resolveHederaAddress, getHederaBalance } from '../services/hederaService';
 import { useAccount } from 'wagmi';
 
+import { getTopTokensByVolume } from '../services/marketService';
+
 type ChatBoxProps = {
   session: ChatSession;
   onUpdateSession: (messages: ChatMessage[], newTitle?: string) => void;
@@ -59,18 +61,24 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
         const intent = response.intent;
         const params = response.parameters;
 
-        if (intent === 'check_balance') {
+        if (intent === 'check_balance' || intent === 'analyze_wallet') {
           try {
-            const target = params.targetAddress || address;
+            const target = params.targetAddress || hederaId || address;
             if (!target) {
               aiMessages.push({ id: uuidv4(), role: 'ai', content: "Please connect your wallet or specify an account to check a balance." });
             } else {
               const nativeId = await resolveHederaAddress(target);
               const balance = await getHederaBalance(nativeId);
               
-              let balanceReply = `[SYSTEM] Balance for ${nativeId}:\n- ${balance.hbar} HBAR`;
+              let balanceReply = `[COPILOT] Result for ${nativeId}:\n- ${balance.hbar} HBAR`;
               if (balance.formattedTokens.length > 0) {
                 balanceReply += `\n- ${balance.formattedTokens.join('\n- ')}`;
+              }
+
+              if (intent === 'analyze_wallet') {
+                balanceReply = `🚨 PORTFOLIO ORACLE 🚨\n\nResolved ID: ${nativeId}\nPayload Breakdown:\n- ${balance.hbar} HBAR` + 
+                                (balance.formattedTokens.length > 0 ? `\n- ${balance.formattedTokens.join('\n- ')}` : "") +
+                                `\n\nNet asset diversity looks healthy. Would you like me to analyze any specific token performance?`;
               }
               
               aiMessages.push({
@@ -80,8 +88,26 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
               });
             }
           } catch (err) {
-            aiMessages.push({ id: uuidv4(), role: 'ai', content: "I couldn't retrieve the balance right now." });
+            aiMessages.push({ id: uuidv4(), role: 'ai', content: "I couldn't retrieve the wallet data right now." });
           }
+        } else if (intent === 'market_query') {
+            try {
+              const marketData = await getTopTokensByVolume(12);
+              const summaryRes = await fetch('/api/summarize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: marketData, query: text })
+              });
+              const { summary } = await summaryRes.json();
+              
+              aiMessages.push({
+                id: uuidv4(),
+                role: 'ai',
+                content: summary
+              });
+            } catch (err) {
+              aiMessages.push({ id: uuidv4(), role: 'ai', content: "I'm having trouble fetching live market intel right now. SaucerSwap signals are currently faint!" });
+            }
         } else {
           // It's a transaction intent (swap, transfer, etc)
           aiMessages.push({

@@ -4,6 +4,8 @@ import { getLeaderboard, getUserProfile, type UserProfile } from '../services/hp
 import { getRankFromHP, getRankProgress, getNextRankThreshold } from '../utils/ranks';
 import { useHederaId } from '../hooks/useHederaId';
 
+import { Share2 } from 'lucide-react';
+
 export default function LeaderboardPage() {
   const { address, isConnected } = useAccount();
   const [leaderboard, setLeaderboard] = useState<UserProfile[]>([]);
@@ -28,6 +30,12 @@ export default function LeaderboardPage() {
   const truncateAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   const displayId = (user: UserProfile) => user.hedera_id || truncateAddress(user.wallet_address);
 
+  const handleShare = () => {
+    const rank = getRankFromHP(userProfile?.hp_balance || 0);
+    const text = `Just hit ${rank} rank on @HashpilotAi. My AI is trading on Hedera while you sleep. 🚀 Earn Hash Points with me: hashpilot.vercel.app`;
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
   return (
     <div className="h-full w-full max-w-5xl mx-auto px-6 pt-10 pb-20 overflow-y-auto no-scrollbar">
       <div className="flex flex-col gap-10">
@@ -42,6 +50,16 @@ export default function LeaderboardPage() {
           <div className="glass-panel p-8 rounded-3xl border border-white/10 relative overflow-hidden purple-glow">
             <div className="absolute top-0 right-0 p-6 opacity-5">
               <h1 className="text-9xl font-black italic tracking-tighter -mr-10 -mt-10">RANK</h1>
+            </div>
+
+            <div className="absolute top-6 right-6 z-20">
+              <button 
+                onClick={handleShare}
+                className="flex items-center gap-2 px-4 py-2 bg-soft-purple text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg"
+              >
+                <Share2 size={14} />
+                𝕏 Share Rank
+              </button>
             </div>
             
             <div className="grid md:grid-cols-3 gap-8 relative z-10">

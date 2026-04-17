@@ -36,7 +36,7 @@ export default async function handler(req: Request) {
           enum: [
             "check_balance", "transfer_token", "swap_token", "create_token", 
             "stake_hbar", "unstake_hbar", "wrap_hbar", "airdrop_tokens", 
-            "mint_nft", "get_market_data", "conversational"
+            "mint_nft", "get_market_data", "analyze_wallet", "market_query", "conversational"
           ],
           description: "The core intent detected from the user's message."
         },
@@ -61,7 +61,7 @@ export default async function handler(req: Request) {
     };
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash',
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: schema as any,
@@ -77,7 +77,9 @@ export default async function handler(req: Request) {
          - IMPORTANT: When extracting 'tokenIn' and 'tokenOut', you must strictly use asset ticker symbols (e.g., HBAR, SAUCE, XSAUCE, USDC) and output them as UPPERCASE strings.
          - Do not extract or assume any other tokens.
       4. For 'transfer_token': Pay close attention to the destination address. Hedera users often use the format '0.0.xxxxx'. You MUST extract this exactly as provided. If they provide an EVM '0x' address, extract that instead.
-      5. In the 'reply' field, provide a natural, encouraging confirmation (e.g., "Sure! I've prepared that balance check for you." or "I've drafted that HBAR swap to SAUCE. Check the details below!")
+      5. For 'analyze_wallet': If the user asks what is in their wallet, their balances, or asks for a portfolio analysis.
+      6. For 'market_query': If the user asks for token prices, market updates, top tokens, or meme coins on Hedera.
+      7. In the 'reply' field, provide a natural, encouraging confirmation (e.g., "Sure! I've prepared that balance check for you." or "I've drafted that HBAR swap to SAUCE. Check the details below!")
 
       Avoid all technical prefixes. Just talk like a human expert.`
     });
