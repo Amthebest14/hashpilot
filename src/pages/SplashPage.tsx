@@ -1,8 +1,8 @@
-import { useNavigate } from 'react-router-dom';
+type SplashPageProps = {
+  onEnter: () => void;
+};
 
-export default function SplashPage() {
-  const navigate = useNavigate();
-
+export default function SplashPage({ onEnter }: SplashPageProps) {
   return (
     <div className="min-h-screen w-full bg-main-blue text-white relative overflow-hidden flex flex-col items-center justify-center font-sans selection:bg-soft-purple selection:text-white">
       {/* Dynamic Aura Background */}
@@ -24,7 +24,7 @@ export default function SplashPage() {
         </p>
 
         <button 
-          onClick={() => navigate('/app/terminal')}
+          onClick={onEnter}
           className="group relative px-12 py-5 bg-soft-purple rounded-2xl overflow-hidden transition-all hover:scale-105 active:scale-95 purple-glow"
         >
           <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
