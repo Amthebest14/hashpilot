@@ -8,6 +8,8 @@ import ChatBox from './components/ChatBox';
 
 import { Toaster } from 'react-hot-toast';
 
+import CustomWalletButton from './components/CustomWalletButton';
+
 function App() {
   const [showApp, setShowApp] = useState(false);
   const [activeTab, setActiveTab] = useState<'copilot' | 'leaderboard'>('copilot');
@@ -77,6 +79,22 @@ function App() {
 
       {/* Main Area */}
       <div className="flex-1 h-screen relative z-10 flex flex-col overflow-hidden">
+        {/* Top Navbar */}
+        <header className="h-20 shrink-0 border-b border-white/5 flex items-center justify-between px-10 relative z-40 bg-main-blue/50 backdrop-blur-xl">
+           <div className="flex flex-col">
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-soft-purple">Hedera Network</span>
+              <h1 className="text-xl font-black italic tracking-tighter uppercase">{activeTab}</h1>
+           </div>
+           
+           <div className="flex items-center gap-6">
+              <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/5">
+                 <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                 <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Testnet Node Active</span>
+              </div>
+              <CustomWalletButton />
+           </div>
+        </header>
+
         <main className="flex-1 overflow-hidden flex flex-col">
           {activeTab === 'copilot' ? (
             <div className="flex-1 overflow-hidden flex flex-col">
@@ -85,6 +103,7 @@ function App() {
                   key={activeSession.id} 
                   session={activeSession} 
                   onUpdateSession={updateActiveSession} 
+                  hederaId={localHederaId}
                 />
               ) : (
                 <div className="flex-1 flex items-center justify-center">

@@ -12,9 +12,10 @@ import { useAccount } from 'wagmi';
 type ChatBoxProps = {
   session: ChatSession;
   onUpdateSession: (messages: ChatMessage[], newTitle?: string) => void;
+  hederaId?: string;
 };
 
-export default function ChatBox({ session, onUpdateSession }: ChatBoxProps) {
+export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxProps) {
   const [isThinking, setIsThinking] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { getExecutableFunction } = useActionRouter();
@@ -128,6 +129,7 @@ export default function ChatBox({ session, onUpdateSession }: ChatBoxProps) {
                   parameters={msg.parameters}
                   initialStatus={msg.txStatus as any || 'idle'}
                   initialHash={msg.txHash}
+                  hederaId={hederaId}
                   onExecute={getExecutableFunction(msg.intent!, msg.parameters)!}
                   onUpdateState={(status, hash) => onUpdateTxState(msg.id, status, hash)}
                 />

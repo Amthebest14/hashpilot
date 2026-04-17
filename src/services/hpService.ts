@@ -2,11 +2,12 @@ import { supabase } from './supabaseClient';
 
 export interface UserProfile {
   wallet_address: string;
+  hedera_id?: string;
   hp_balance: number;
   last_active: string;
 }
 
-export async function awardHP(walletAddress: string, amount: number) {
+export async function awardHP(walletAddress: string, amount: number, hederaId?: string) {
   if (!walletAddress) return;
 
   try {
@@ -34,6 +35,7 @@ export async function awardHP(walletAddress: string, amount: number) {
       .upsert({
         wallet_address: walletAddress,
         hp_balance: newHP,
+        hedera_id: hederaId || undefined,
         last_active: new Date().toISOString()
       }, { onConflict: 'wallet_address' });
 

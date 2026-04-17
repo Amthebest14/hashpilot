@@ -12,6 +12,7 @@ type TransactionCardProps = {
   parameters: any;
   initialStatus?: TxStatus;
   initialHash?: string | null;
+  hederaId?: string;
   onExecute: () => Promise<string>;
   onUpdateState: (status: TxStatus, hash?: string | null) => void;
 };
@@ -21,6 +22,7 @@ export default function TransactionCard({
   parameters,
   initialStatus = 'idle',
   initialHash = null,
+  hederaId,
   onExecute,
   onUpdateState
 }: TransactionCardProps) {
@@ -41,7 +43,7 @@ export default function TransactionCard({
       // Award HP and Toast on success
       if (address) {
         const hpAmount = intent === 'swap_token' ? 25 : 10;
-        awardHP(address, hpAmount).then(() => {
+        awardHP(address, hpAmount, hederaId).then(() => {
           toast.success(intent === 'swap_token' ? '⚡ +25 HP REWARDED' : '⚡ +10 HP REWARDED');
         }).catch(e => console.error('[TX_CARD] HP Award failed:', e));
       }

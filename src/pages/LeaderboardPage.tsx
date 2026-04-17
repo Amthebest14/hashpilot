@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { getLeaderboard, getUserProfile, type UserProfile } from '../services/hpService';
 import { getRankFromHP, getRankProgress, getNextRankThreshold } from '../utils/ranks';
+import { useHederaId } from '../hooks/useHederaId';
 
 export default function LeaderboardPage() {
   const { address, isConnected } = useAccount();
   const [leaderboard, setLeaderboard] = useState<UserProfile[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const activeHederaId = useHederaId(address || undefined);
 
   useEffect(() => {
     async function loadData() {
@@ -24,6 +26,7 @@ export default function LeaderboardPage() {
   }, [address, isConnected]);
 
   const truncateAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  const displayId = (user: UserProfile) => user.hedera_id || truncateAddress(user.wallet_address);
 
   return (
     <div className="h-full w-full max-w-5xl mx-auto px-6 pt-10 pb-20 overflow-y-auto no-scrollbar">
@@ -44,7 +47,7 @@ export default function LeaderboardPage() {
             <div className="grid md:grid-cols-3 gap-8 relative z-10">
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Active Pilot</span>
-                <span className="text-xl font-bold truncate font-mono">{address ? truncateAddress(address) : '---'}</span>
+                <span className="text-xl font-bold truncate font-mono">{activeHederaId || (address ? truncateAddress(address) : '---')}</span>
               </div>
               
               <div className="flex flex-col gap-1">
@@ -83,7 +86,7 @@ export default function LeaderboardPage() {
               <thead>
                 <tr className="border-b border-white/5 bg-white/5 font-black text-[9px] uppercase tracking-[0.2em] text-white/40">
                   <th className="px-8 py-4">#</th>
-                  <th className="px-8 py-4">Wallet</th>
+                  <th className="px-8 py-4">Pilot ID</th>
                   <th className="px-8 py-4">Rank</th>
                   <th className="px-8 py-4 text-right">Points</th>
                 </tr>
@@ -97,7 +100,7 @@ export default function LeaderboardPage() {
                   leaderboard.map((user, index) => (
                     <tr key={user.wallet_address} className={`hover:bg-white/5 transition-colors ${user.wallet_address === address ? 'bg-soft-purple/10' : ''}`}>
                       <td className="px-8 py-5 font-black text-soft-purple/60 italic">#{index + 1}</td>
-                      <td className="px-8 py-5 font-mono text-sm">{truncateAddress(user.wallet_address)}</td>
+                      <td className="px-8 py-5 font-mono text-sm">{displayId(user)}</td>
                       <td className="px-8 py-5 font-bold text-xs italic tracking-tighter text-white/60">{getRankFromHP(user.hp_balance)}</td>
                       <td className="px-8 py-5 text-right font-black text-white">{user.hp_balance} HP</td>
                     </tr>

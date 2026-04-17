@@ -239,11 +239,6 @@ export default function HistorySidebar({
               <span className="text-[10px] text-white/40 uppercase tracking-tighter">Connected</span>
            </div>
         </div>
-        
-        {/* Global Wallet Button - Never Unmounts */}
-        <div className="scale-90 origin-left">
-          <appkit-button />
-        </div>
       </div>
     </aside>
   );
