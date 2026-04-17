@@ -61,7 +61,7 @@ export default async function handler(req: Request) {
     };
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.5-flash',
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: schema as any,
@@ -97,11 +97,10 @@ export default async function handler(req: Request) {
     const errMsg = error instanceof Error ? error.message : 'Unknown error';
     console.error('Gemini API Error:', errMsg);
     return new Response(JSON.stringify({ 
-      intent: 'conversational',
-      parameters: {},
-      reply: "I'm having a little trouble connecting right now. Please try again in a moment!"
+      error: errMsg,
+      reply: `[API ERROR] ${errMsg}`
     }), { 
-      status: 200,
+      status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
   }

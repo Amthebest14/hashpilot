@@ -45,13 +45,16 @@ export const queryAI = async (message: string): Promise<AIResponse> => {
 
     const data: AIResponse = await response.json();
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error querying AI:', error);
-    // Return a conversational fallback in case of error
+    
+    // Attempt to extract the server error message if available
+    const errorDetail = error.message || "Unknown Connection Error";
+    
     return {
       intent: 'conversational',
       parameters: {},
-      reply: "I'm having trouble connecting right now. Please try again in a moment!"
+      reply: `🚨 AI BRIDGE FAILURE: ${errorDetail}. Check console for full stack trace.`
     };
   }
 };
