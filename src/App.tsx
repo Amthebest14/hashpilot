@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import SplashPage from './pages/SplashPage';
-import TerminalPage from './pages/TerminalPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import HistorySidebar, { useHistory } from './components/HistorySidebar';
 import { resolveHederaAddress } from './services/hederaService';
