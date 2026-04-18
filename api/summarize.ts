@@ -16,27 +16,25 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Query is required' }), { status: 400 });
     }
 
-    // Server-side fetch from SaucerSwap to bypass CORS
+    // Server-side fetch from CoinGecko to bypass CORS and Cloudflare bot protection
     let marketData = clientData;
     if (!marketData || Object.keys(marketData).length === 0) {
       try {
-        const ssRes = await fetch('https://api.saucerswap.finance/tokens');
-        if (ssRes.ok) {
-          const tokens = await ssRes.json();
-          marketData = tokens
-            .map((t: any) => ({
-              symbol: t.symbol,
-              name: t.name,
-              priceUsd: parseFloat(t.priceUsd) || 0,
-              volume24hUsd: parseFloat(t.volume24hUsd) || 0,
-              liquidityUsd: parseFloat(t.liquidity) || 0,
-              tokenAddress: t.address
-            }))
-            .sort((a: any, b: any) => b.volume24hUsd - a.volume24hUsd)
-            .slice(0, 12);
+        const cgRes = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&category=hedera-ecosystem&order=volume_desc&per_page=10&page=1&sparkline=false');
+        if (cgRes.ok) {
+          const tokens = await cgRes.json();
+          marketData = tokens.map((t: any) => ({
+            symbol: t.symbol,
+            name: t.name,
+            current_price: t.current_price,
+            price_change_percentage_24h: t.price_change_percentage_24h,
+            total_volume: t.total_volume
+          }));
+        } else {
+           console.error('CoinGecko API returned status:', cgRes.status);
         }
       } catch (err) {
-        console.error('SaucerSwap Fetch Error:', err);
+        console.error('CoinGecko Fetch Error:', err);
       }
     }
 
@@ -51,8 +49,8 @@ export default async function handler(req: Request) {
     const prompt = `You are 'Hashpilot', an expert DeFi copilot for Hedera. 
     A user asked: "${query}". 
     
-    Here is the live market data from SaucerSwap (Mainnet):
-    ${JSON.stringify(data, null, 2)}
+    Here is the live market data from CoinGecko (Hedera Ecosystem Top 10 by Volume):
+    ${JSON.stringify(marketData, null, 2)}
     
     Please provide a very natural, concise, and conversational summary for the user. 
     Highlight the most relevant parts of the data (like prices or top volume) without being too technical.

@@ -1,4 +1,4 @@
-import { encodeFunctionData } from 'viem';
+import { encodeFunctionData, parseEther } from 'viem';
 
 // SaucerSwap V1 Testnet Router
 const SAUCERSWAP_V1_ROUTER = '0x0000000000000000000000000000000000004b40'; // Entity ID 0.0.19264
@@ -103,8 +103,8 @@ export async function prepareSaucerSwap(
   const tinDecimals = tin === 'SAUCE' ? 6 : tin === 'HBAR' ? 8 : 18;
   const rawAmountIn = BigInt(Math.floor(parseFloat(amount) * Math.pow(10, tinDecimals)));
   
-  // msg.value is only used for HBAR -> Token swaps
-  const txValue = tin === 'HBAR' ? rawAmountIn : 0n;
+  // msg.value is only used for HBAR -> Token swaps and is expected as an 18-decimal weibars EVM integer
+  const txValue = tin === 'HBAR' ? parseEther(amount) : 0n;
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 60 * 20); // 20 mins
 
   let path: `0x${string}`[] = [];
