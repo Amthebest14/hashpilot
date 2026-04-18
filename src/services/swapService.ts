@@ -54,6 +54,12 @@ const ERC20_ABI = [
   }
 ] as const;
 
+export interface SaucerSwapTx {
+  to: `0x${string}`;
+  data: `0x${string}`;
+  value?: bigint;
+}
+
 /**
  * Prepares an ERC20 Approval transaction for the SaucerSwap Router.
  * Required before swapping Tokens -> HBAR.
@@ -61,7 +67,7 @@ const ERC20_ABI = [
 export async function prepareApproval(
   tokenSymbol: string,
   amount: string
-) {
+): Promise<SaucerSwapTx> {
   const sym = tokenSymbol.toUpperCase();
   const tokenAddress = TESTNET_TOKENS[sym];
   if (!tokenAddress) throw new Error(`Unsupported token for approval: ${sym}`);
@@ -88,7 +94,7 @@ export async function prepareSaucerSwap(
   tokenOutName: string,
   amount: string,
   userAddress: string
-) {
+): Promise<SaucerSwapTx> {
   const tin = tokenInName.toUpperCase();
   const tout = tokenOutName.toUpperCase();
 
