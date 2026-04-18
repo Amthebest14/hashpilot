@@ -61,8 +61,10 @@ export function useActionRouter() {
              const approveConfig: any = {
                 to: approveTx.to,
                 data: approveTx.data,
-                gas: 3000000n, // Hardcode gas for non-payable approve to prevent estimate failure
+                gas: 3000000n, // Hardcode gas for non-payable approve
              };
+             
+             delete approveConfig.value; // Aggressive removal of potential auto-filled keys
              
              const approveHash = await sendTransactionAsync(approveConfig);
              console.log(`[ROUTER] Approval Signed. Hash: ${approveHash}. Waiting to trigger swap...`);
@@ -78,9 +80,11 @@ export function useActionRouter() {
             gas: 3000000n,
           };
 
-          // Only attach value for payable paths
+          // Only attach value for payable paths, otherwise aggressively delete
           if (swapTx.value !== undefined && swapTx.value > 0n) {
              swapConfig.value = swapTx.value;
+          } else {
+             delete (swapConfig as any).value;
           }
 
           return await sendTransactionAsync(swapConfig);

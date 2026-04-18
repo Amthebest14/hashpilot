@@ -92,16 +92,16 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
             try {
               // Client-side fetch using user's home IP (Bypasses Vercel/Datacenter blocks)
               const dsRes = await fetch('https://api.dexscreener.com/latest/dex/search?q=saucerswap');
-              let marketData = [];
+              let lightDataString = "No live market data available.";
+              
               if (dsRes.ok) {
                 const dsData = await dsRes.json();
                 console.log("DexScreener Raw Data:", dsData); // Diagnostic Log
-                marketData = (dsData.pairs || []).slice(0, 8).map((p: any) => ({
-                  symbol: p.baseToken?.symbol,
-                  priceUsd: p.priceUsd,
-                  volume24h: p.volume?.h24,
-                  priceChange24h: p.priceChange?.h24
-                }));
+                
+                // Compress into a single light string to prevent AI/Edge crashes
+                lightDataString = (dsData.pairs || []).slice(0, 6)
+                  .map((p: any) => `${p.baseToken?.symbol || '?'}: $${p.priceUsd || '0'} (24h Vol: $${p.volume?.h24 || '0'})`)
+                  .join(' | ');
               } else {
                  console.error("DexScreener Fetch Failed. Status:", dsRes.status); // Diagnostic Log
               }
@@ -109,7 +109,7 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
               const summaryRes = await fetch('/api/summarize', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ data: marketData, query: text })
+                body: JSON.stringify({ data: lightDataString, query: text })
               });
               
               const summaryJson = await summaryRes.json();
