@@ -56,24 +56,34 @@ export function useActionRouter() {
           if (tin !== 'HBAR') {
              console.log(`[ROUTER] Step 1: Requesting approval for ${amount} ${tin}`);
              const approveTx = await prepareApproval(tin, amount);
-             const approveHash = await sendTransactionAsync({
+             
+             // Build explicitly to avoid viem undefined key injections
+             const approveConfig: any = {
                 to: approveTx.to,
                 data: approveTx.data,
-                ...(approveTx.value !== undefined ? { value: approveTx.value } : {}),
-                gas: 500000n, // Approval usually cheap
-             });
+                gas: 3000000n, // Hardcode gas for non-payable approve to prevent estimate failure
+             };
+             
+             const approveHash = await sendTransactionAsync(approveConfig);
              console.log(`[ROUTER] Approval Signed. Hash: ${approveHash}. Waiting to trigger swap...`);
           }
 
           // STEP 2: Execute Swap
           console.log(`[ROUTER] Step 2: Executing ${tin} -> ${tokenOut.toUpperCase()} swap`);
           const swapTx = await prepareSaucerSwap(tokenIn, tokenOut, amount, address!);
-          return await sendTransactionAsync({
+          
+          const swapConfig: any = {
             to: swapTx.to,
             data: swapTx.data,
-            ...(swapTx.value !== undefined ? { value: swapTx.value } : {}),
             gas: 3000000n,
-          });
+          };
+
+          // Only attach value for payable paths
+          if (swapTx.value !== undefined && swapTx.value > 0n) {
+             swapConfig.value = swapTx.value;
+          }
+
+          return await sendTransactionAsync(swapConfig);
         };
       }
 

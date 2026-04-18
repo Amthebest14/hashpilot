@@ -95,12 +95,15 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
               let marketData = [];
               if (dsRes.ok) {
                 const dsData = await dsRes.json();
+                console.log("DexScreener Raw Data:", dsData); // Diagnostic Log
                 marketData = (dsData.pairs || []).slice(0, 8).map((p: any) => ({
                   symbol: p.baseToken?.symbol,
                   priceUsd: p.priceUsd,
                   volume24h: p.volume?.h24,
                   priceChange24h: p.priceChange?.h24
                 }));
+              } else {
+                 console.error("DexScreener Fetch Failed. Status:", dsRes.status); // Diagnostic Log
               }
 
               const summaryRes = await fetch('/api/summarize', {
@@ -108,14 +111,17 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ data: marketData, query: text })
               });
-              const { summary } = await summaryRes.json();
+              
+              const summaryJson = await summaryRes.json();
+              console.log("Gemini Edge Response:", summaryJson); // Diagnostic Log
               
               aiMessages.push({
                 id: uuidv4(),
                 role: 'ai',
-                content: summary
+                content: summaryJson.summary
               });
             } catch (err) {
+              console.error("DexScreener/Summarize Execution Failed:", err); // Diagnostic Log
               aiMessages.push({ id: uuidv4(), role: 'ai', content: "I'm having trouble fetching live market intel right now. SaucerSwap signals are currently faint!" });
             }
         } else {
