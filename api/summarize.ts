@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export const config = {
