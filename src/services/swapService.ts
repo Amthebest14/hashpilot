@@ -79,7 +79,7 @@ export async function prepareApproval(
   return {
     to: tokenAddress as `0x${string}`,
     data: encodedData,
-    value: 0n,
+    // value: 0n is strictly omitted for non-payable approve
   };
 }
 
@@ -99,12 +99,10 @@ export async function prepareSaucerSwap(
     throw new Error(`Unsupported token pairing: ${tin} to ${tout}`);
   }
 
-  // Token decimal handling
+  // Token decimal handling for input token
   const tinDecimals = tin === 'SAUCE' ? 6 : tin === 'HBAR' ? 8 : 18;
   const rawAmountIn = BigInt(Math.floor(parseFloat(amount) * Math.pow(10, tinDecimals)));
   
-  // msg.value is only used for HBAR -> Token swaps and is expected as an 18-decimal weibars EVM integer
-  const txValue = tin === 'HBAR' ? parseEther(amount) : 0n;
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 60 * 20); // 20 mins
 
   let path: `0x${string}`[] = [];
@@ -128,9 +126,18 @@ export async function prepareSaucerSwap(
       : [rawAmountIn, 0n, path, userAddress as `0x${string}`, deadline],
   });
 
-  return {
-    to: SAUCERSWAP_V1_ROUTER as `0x${string}`,
-    data: encodedData,
-    value: txValue,
-  };
+  // STRICT DECOUPLING: Omit 'value' key if not HBAR -> Token
+  if (isHbarIn) {
+    return {
+      to: SAUCERSWAP_V1_ROUTER as `0x${string}`,
+      data: encodedData,
+      value: parseEther(amount), // Strictly 18-decimal weibars for msg.value
+    };
+  } else {
+    return {
+      to: SAUCERSWAP_V1_ROUTER as `0x${string}`,
+      data: encodedData,
+      // value is completely omitted for non-payable Token -> HBAR
+    };
+  }
 }

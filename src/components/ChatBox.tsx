@@ -90,10 +90,23 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
           }
         } else if (intent === 'market_query') {
             try {
+              // Client-side fetch using user's home IP (Bypasses Vercel/Datacenter blocks)
+              const dsRes = await fetch('https://api.dexscreener.com/latest/dex/search?q=saucerswap');
+              let marketData = [];
+              if (dsRes.ok) {
+                const dsData = await dsRes.json();
+                marketData = (dsData.pairs || []).slice(0, 8).map((p: any) => ({
+                  symbol: p.baseToken?.symbol,
+                  priceUsd: p.priceUsd,
+                  volume24h: p.volume?.h24,
+                  priceChange24h: p.priceChange?.h24
+                }));
+              }
+
               const summaryRes = await fetch('/api/summarize', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: text })
+                body: JSON.stringify({ data: marketData, query: text })
               });
               const { summary } = await summaryRes.json();
               

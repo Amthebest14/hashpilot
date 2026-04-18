@@ -11,32 +11,10 @@ export default async function handler(req: Request) {
   }
 
   try {
-    const { data: clientData, query } = await req.json();
+    const { data: marketData, query } = await req.json();
 
     if (!query) {
       return new Response(JSON.stringify({ error: 'Query is required' }), { status: 400 });
-    }
-
-    // Server-side fetch from CoinGecko to bypass CORS and Cloudflare bot protection
-    let marketData = clientData;
-    if (!marketData || Object.keys(marketData).length === 0) {
-      try {
-        const cgRes = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&category=hedera-ecosystem&order=volume_desc&per_page=10&page=1&sparkline=false');
-        if (cgRes.ok) {
-          const tokens = await cgRes.json();
-          marketData = tokens.map((t: any) => ({
-            symbol: t.symbol,
-            name: t.name,
-            current_price: t.current_price,
-            price_change_percentage_24h: t.price_change_percentage_24h,
-            total_volume: t.total_volume
-          }));
-        } else {
-           console.error('CoinGecko API returned status:', cgRes.status);
-        }
-      } catch (err) {
-        console.error('CoinGecko Fetch Error:', err);
-      }
     }
 
     const apiKey = process.env.GEMINI_API_KEY;

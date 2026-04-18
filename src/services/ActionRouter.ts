@@ -59,12 +59,10 @@ export function useActionRouter() {
              const approveHash = await sendTransactionAsync({
                 to: approveTx.to,
                 data: approveTx.data,
-                value: 0n,
+                ...(approveTx.value !== undefined ? { value: approveTx.value } : {}),
                 gas: 500000n, // Approval usually cheap
              });
              console.log(`[ROUTER] Approval Signed. Hash: ${approveHash}. Waiting to trigger swap...`);
-             // In a perfect world we'd wait for receipt, but on Hedera/Testnet 
-             // we'll proceed immediately for UX speed, or we could add a delay.
           }
 
           // STEP 2: Execute Swap
@@ -73,7 +71,7 @@ export function useActionRouter() {
           return await sendTransactionAsync({
             to: swapTx.to,
             data: swapTx.data,
-            value: swapTx.value,
+            ...(swapTx.value !== undefined ? { value: swapTx.value } : {}),
             gas: 3000000n,
           });
         };
