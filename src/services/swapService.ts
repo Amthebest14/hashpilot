@@ -1,10 +1,10 @@
 import { encodeFunctionData, parseEther } from 'viem';
 
 // SaucerSwap V1 Testnet Router
-const SAUCERSWAP_V1_ROUTER = '0x0000000000000000000000000000000000004b40'; // Entity ID 0.0.19264
+export const SAUCERSWAP_V1_ROUTER = '0x0000000000000000000000000000000000004b40'; // Entity ID 0.0.19264
 
 // Token Mappings (Testnet)
-const TESTNET_TOKENS: Record<string, string> = {
+export const TESTNET_TOKENS: Record<string, string> = {
   'HBAR': '0x0000000000000000000000000000000000003ad2',
   'WHBAR': '0x0000000000000000000000000000000000003ad2',
   'SAUCE': '0x0000000000000000000000000000000000120f46',
@@ -13,7 +13,8 @@ const TESTNET_TOKENS: Record<string, string> = {
 };
 
 // V1 Router ABI (Uniswap V2 based)
-const SAUCERSWAP_V1_ABI = [
+export const SAUCERSWAP_V1_ABI = [
+  // ... (rest remains same)
   {
     "inputs": [
       { "internalType": "uint256", "name": "amountOutMin", "type": "uint256" },
@@ -41,7 +42,17 @@ const SAUCERSWAP_V1_ABI = [
   }
 ] as const;
 
-const ERC20_ABI = [
+export const ERC20_ABI = [
+  {
+    "constant": true,
+    "inputs": [
+      { "name": "owner", "type": "address" },
+      { "name": "spender", "type": "address" }
+    ],
+    "name": "allowance",
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "type": "function"
+  },
   {
     "constant": false,
     "inputs": [
@@ -72,9 +83,11 @@ export async function prepareApproval(
   const tokenAddress = TESTNET_TOKENS[sym];
   if (!tokenAddress) throw new Error(`Unsupported token for approval: ${sym}`);
 
-  // SAUCE uses 6 decimals
+  // SAUCE uses 6 decimals. If amount is 'max', we use maxUint256 for Infinite Approval.
   const decimals = sym === 'SAUCE' ? 6 : sym === 'HBAR' ? 8 : 18;
-  const rawAmount = BigInt(Math.floor(parseFloat(amount) * Math.pow(10, decimals)));
+  const rawAmount = amount === 'max' 
+    ? BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+    : BigInt(Math.floor(parseFloat(amount) * Math.pow(10, decimals)));
 
   const encodedData = encodeFunctionData({
     abi: ERC20_ABI,

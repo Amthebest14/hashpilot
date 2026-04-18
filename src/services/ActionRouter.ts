@@ -1,6 +1,12 @@
-import { useSendTransaction, useAccount } from 'wagmi';
+import { useSendTransaction, useAccount, usePublicClient } from 'wagmi';
 import { parseEther } from 'viem';
-import { prepareSaucerSwap, prepareApproval } from './swapService';
+import { 
+  prepareSaucerSwap, 
+  prepareApproval, 
+  TESTNET_TOKENS, 
+  SAUCERSWAP_V1_ROUTER, 
+  ERC20_ABI 
+} from './swapService';
 
 // Helper to convert 0.0.x to 0x if needed for viem validation
 const ensureEvmAddress = async (address: string): Promise<`0x${string}`> => {
@@ -25,6 +31,7 @@ const ensureEvmAddress = async (address: string): Promise<`0x${string}`> => {
 export function useActionRouter() {
   const { sendTransactionAsync } = useSendTransaction();
   const { isConnected, address } = useAccount();
+  const publicClient = usePublicClient();
 
   const getExecutableFunction = (intent: string, parameters: any): (() => Promise<string>) | null => {
     if (!isConnected) {
@@ -51,27 +58,47 @@ export function useActionRouter() {
           if (!amount || !tokenIn || !tokenOut) throw new Error('Missing swap details.');
           
           const tin = tokenIn.toUpperCase();
+          const tokenInAddress = TESTNET_TOKENS[tin] as `0x${string}`;
           
-          // STEP 1: Handle Approval if tokenIn is NOT HBAR
-          if (tin !== 'HBAR') {
-             console.log(`[ROUTER] Step 1: Requesting approval for ${amount} ${tin}`);
-             const approveTx = await prepareApproval(tin, amount);
-             
-             // Build explicitly to avoid viem undefined key injections
-             const approveConfig: any = {
-                to: approveTx.to,
-                data: approveTx.data,
-                gas: 3000000n, // Hardcode gas for non-payable approve
-             };
-             
-             delete approveConfig.value; // Aggressive removal of potential auto-filled keys
-             
-             const approveHash = await sendTransactionAsync(approveConfig);
-             console.log(`[ROUTER] Approval Signed. Hash: ${approveHash}. Waiting to trigger swap...`);
+          const tinDecimals = tin === 'SAUCE' ? 6 : tin === 'HBAR' ? 8 : 18;
+          const rawAmountIn = BigInt(Math.floor(parseFloat(amount) * Math.pow(10, tinDecimals)));
+
+          // STEP 1: Smart Allowance Check (Only for Tokens -> HBAR)
+          if (tin !== 'HBAR' && publicClient && address) {
+             console.log(`[ROUTER] Checking allowance for ${tin}...`);
+             const currentAllowance = await publicClient.readContract({
+                address: tokenInAddress,
+                abi: ERC20_ABI,
+                functionName: 'allowance',
+                args: [address, SAUCERSWAP_V1_ROUTER as `0x${string}`],
+             }) as bigint;
+
+             if (currentAllowance < rawAmountIn) {
+                console.log(`[ROUTER] Insufficient allowance (${currentAllowance} < ${rawAmountIn}). Requesting Infinite Approval...`);
+                // Use 'max' for Infinite Approval (UX optimization)
+                const approveTx = await prepareApproval(tin, 'max');
+                
+                // Explicitly built config to avoid 'value' back-filling
+                const approveConfig: any = {
+                   to: approveTx.to,
+                   data: approveTx.data,
+                   gas: 3000000n, // Override gas estimation
+                };
+                delete approveConfig.value;
+
+                const approveHash = await sendTransactionAsync(approveConfig);
+                console.log(`[ROUTER] Approval sent: ${approveHash}. Waiting for Hedera consensus...`);
+                
+                // WAIT FOR RECEIPT: Crucial to avoid nonce collisions/race conditions
+                await publicClient.waitForTransactionReceipt({ hash: approveHash });
+                console.log(`[ROUTER] Consensus reached. Proceeding to swap.`);
+             } else {
+                console.log(`[ROUTER] Sufficient allowance detected (${currentAllowance}). Skipping approve step.`);
+             }
           }
 
           // STEP 2: Execute Swap
-          console.log(`[ROUTER] Step 2: Executing ${tin} -> ${tokenOut.toUpperCase()} swap`);
+          console.log(`[ROUTER] Initiating ${tin} -> ${tokenOut.toUpperCase()} swap...`);
           const swapTx = await prepareSaucerSwap(tokenIn, tokenOut, amount, address!);
           
           const swapConfig: any = {
@@ -80,11 +107,12 @@ export function useActionRouter() {
             gas: 3000000n,
           };
 
-          // Only attach value for payable paths, otherwise aggressively delete
+          // Only attach value for payable paths (HBAR -> TOKEN)
           if (swapTx.value !== undefined && swapTx.value > 0n) {
              swapConfig.value = swapTx.value;
           } else {
-             delete (swapConfig as any).value;
+             // Explicitly delete to force Wagmi to ignore the key
+             delete swapConfig.value;
           }
 
           return await sendTransactionAsync(swapConfig);
