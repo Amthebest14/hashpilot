@@ -20,22 +20,26 @@ export default async function handler(req: Request) {
     let latestUserMessage = messages[messages.length - 1].content;
     const historyRaw = messages.slice(0, -1);
     
-    // Strict Sanitizer: Remove empty, Map roles, Group Consecutive
+    // Strict Sanitizer: Remove empty, Map roles, Group Consecutive, Start with User
     const sanitizedHistory: any[] = [];
     
     for (const msg of historyRaw) {
       if (!msg.content || typeof msg.content !== 'string' || msg.content.trim() === '') {
-        continue; // Rule 3: Skip empty text
+        continue; // Rule: Skip empty text
       }
       
-      const mappedRole = msg.role === 'ai' || msg.role === 'model' ? 'model' : 'user'; // Rule 1
+      const mappedRole = msg.role === 'ai' || msg.role === 'model' ? 'model' : 'user';
       
+      // Rule 0: History must start with 'user'. Drop any leading 'model' messages.
+      if (sanitizedHistory.length === 0 && mappedRole === 'model') {
+        continue;
+      }
+
       const lastEntry = sanitizedHistory[sanitizedHistory.length - 1];
       if (lastEntry && lastEntry.role === mappedRole) {
-        // Rule 2: Ping-Pong. Same role found consecutively. Merge text.
+        // Ping-Pong: Conjoin consecutive messages of the same role.
         lastEntry.parts[0].text += `\n\n${msg.content}`;
       } else {
-        // Safe to push new
         sanitizedHistory.push({
           role: mappedRole,
           parts: [{ text: msg.content }]
@@ -43,7 +47,8 @@ export default async function handler(req: Request) {
       }
     }
 
-    // Rule 4: If the array ends with a 'user' message, pop it and merge it into latestUserMessage
+    // Rule: Ensure we don't end on a 'user' message before sendMessage()
+    // If history ends on 'user', pop it and merge into the active prompt trigger.
     if (sanitizedHistory.length > 0) {
       const lastEntry = sanitizedHistory[sanitizedHistory.length - 1];
       if (lastEntry.role === 'user') {
@@ -96,7 +101,7 @@ export default async function handler(req: Request) {
     };
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: schema as any,

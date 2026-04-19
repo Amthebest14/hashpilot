@@ -40,7 +40,15 @@ export const queryAI = async (messages: { role: string; content: string }[]): Pr
     });
 
     if (!response.ok) {
-      throw new Error(`API returned status: ${response.status}`);
+      const errorText = await response.text();
+      let errorDetail = `Status ${response.status}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetail = errorJson.error || errorJson.reply || errorText;
+      } catch (e) {
+        errorDetail = errorText || `Status ${response.status}`;
+      }
+      throw new Error(errorDetail);
     }
 
     const data: AIResponse = await response.json();
@@ -48,13 +56,10 @@ export const queryAI = async (messages: { role: string; content: string }[]): Pr
   } catch (error: any) {
     console.error('Error querying AI:', error);
     
-    // Attempt to extract the server error message if available
-    const errorDetail = error.message || "Unknown Connection Error";
-    
     return {
       intent: 'conversational',
       parameters: {},
-      reply: `🚨 AI BRIDGE FAILURE: ${errorDetail}. Check console for full stack trace.`
+      reply: `🚨 AI BRIDGE FAILURE: ${error.message}`
     };
   }
 };
