@@ -2,7 +2,6 @@ import { useSendTransaction, useAccount, usePublicClient, useWalletClient } from
 import { parseEther, maxUint256 } from 'viem';
 import { 
   prepareSaucerSwap, 
-  prepareApproval, 
   TESTNET_TOKENS, 
   SAUCERSWAP_V1_ROUTER, 
   ERC20_ABI,
