@@ -47,8 +47,13 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
     onUpdateSession(newMessages); // optimistic update
     setIsThinking(true);
 
+    // Filter and map history payload, ignoring empty transaction blocks
+    const historyPayload = newMessages
+      .filter(m => m.content && m.content.trim() !== '')
+      .map(m => ({ role: m.role, content: m.content }));
+
     try {
-      const response = await queryAI(text);
+      const response = await queryAI(historyPayload);
       let aiMessages: ChatMessage[] = [...newMessages, { 
         id: uuidv4(),
         role: 'ai' as const, 

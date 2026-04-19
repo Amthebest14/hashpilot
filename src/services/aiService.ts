@@ -29,14 +29,14 @@ export type AIResponse = {
   reply: string;
 };
 
-export const queryAI = async (message: string): Promise<AIResponse> => {
+export const queryAI = async (messages: { role: string; content: string }[]): Promise<AIResponse> => {
   try {
     const response = await fetch('/api/intent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ messages }),
     });
 
     if (!response.ok) {

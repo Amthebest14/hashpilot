@@ -11,11 +11,19 @@ export default async function handler(req: Request) {
   }
 
   try {
-    const { message } = await req.json();
+    const { messages } = await req.json();
 
-    if (!message) {
-      return new Response(JSON.stringify({ error: 'Message is required' }), { status: 400 });
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return new Response(JSON.stringify({ error: 'Messages array is required' }), { status: 400 });
     }
+
+    const latestUserMessage = messages[messages.length - 1].content;
+    const historyRaw = messages.slice(0, -1);
+    
+    const mappedHistory = historyRaw.map((msg: any) => ({
+      role: msg.role === 'ai' || msg.role === 'model' ? 'model' : 'user',
+      parts: [{ text: msg.content }]
+    }));
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -84,7 +92,11 @@ export default async function handler(req: Request) {
       Avoid all technical prefixes. Just talk like a human expert.`
     });
 
-    const result = await model.generateContent(message);
+    const chat = model.startChat({
+      history: mappedHistory
+    });
+
+    const result = await chat.sendMessage(latestUserMessage);
     const responseText = result.response.text();
     const jsonOutput = JSON.parse(responseText);
 
