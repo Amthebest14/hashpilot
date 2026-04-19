@@ -97,25 +97,28 @@ export function useActionRouter() {
              }
           }
 
-          // STEP 2: Execute Swap
-          console.log(`[ROUTER] Initiating ${tin} -> ${tokenOut.toUpperCase()} swap...`);
+          // STEP 2: Execute Swap (Strict Unification)
+          console.log(`[ROUTER] Finalizing ${tin} -> ${tokenOut.toUpperCase()} swap execution...`);
           const swapTx = await prepareSaucerSwap(tokenIn, tokenOut, amount, address!);
           
-          const swapConfig: any = {
-            to: swapTx.to,
-            data: swapTx.data,
-            gas: 3000000n,
-          };
-
-          // Only attach value for payable paths (HBAR -> TOKEN)
-          if (swapTx.value !== undefined && swapTx.value > 0n) {
-             swapConfig.value = swapTx.value;
+          if (tin === 'HBAR') {
+             // Path A: Payable (HBAR -> Token)
+             return await sendTransactionAsync({
+               to: swapTx.to,
+               data: swapTx.data,
+               value: swapTx.value, // parseEther 18-decimal weibars
+               gas: 3000000n,
+             });
           } else {
-             // Explicitly delete to force Wagmi to ignore the key
-             delete swapConfig.value;
+             // Path B: Non-Payable (Token -> HBAR)
+             // We use a strictly clean object to prevent any Wagmi/Viem 'value' interpolation
+             return await sendTransactionAsync({
+               to: swapTx.to,
+               data: swapTx.data,
+               gas: 3000000n,
+               // value key is surgically omitted to bypass HashPack panic
+             });
           }
-
-          return await sendTransactionAsync(swapConfig);
         };
       }
 
