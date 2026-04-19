@@ -164,7 +164,7 @@ export function useActionRouter() {
             functionName: 'deposit',
             args: [],
             value: parseEther(amount),
-            gas: 3000000n
+            gas: 100000n
           });
         };
       }
