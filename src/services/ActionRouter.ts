@@ -1,5 +1,5 @@
 import { useSendTransaction, useAccount, usePublicClient, useWalletClient } from 'wagmi';
-import { parseEther, maxUint256 } from 'viem';
+import { parseEther, maxUint256, encodeFunctionData } from 'viem';
 import { 
   prepareSaucerSwap, 
   TESTNET_TOKENS, 
@@ -158,11 +158,15 @@ export function useActionRouter() {
             "outputs": []
           }] as const;
 
-          return await walletClient.writeContract({
-            address: whbarAddress,
+          const encodedData = encodeFunctionData({
             abi: wrapAbi,
             functionName: 'deposit',
-            args: [],
+            args: []
+          });
+
+          return await sendTransactionAsync({
+            to: whbarAddress,
+            data: encodedData,
             value: parseEther(amount),
             gas: 100000n
           });
