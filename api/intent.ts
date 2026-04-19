@@ -76,7 +76,7 @@ export default async function handler(req: Request) {
           enum: [
             "check_balance", "transfer_token", "swap_token", "create_token", 
             "stake_hbar", "unstake_hbar", "wrap_hbar", "airdrop_tokens", 
-            "mint_nft", "get_market_data", "analyze_wallet", "market_query", "conversational"
+            "mint_nft", "get_market_data", "analyze_wallet", "market_query", "cancel", "conversational"
           ],
           description: "The core intent detected from the user's message."
         },
@@ -119,7 +119,8 @@ export default async function handler(req: Request) {
       4. For 'transfer_token': Pay close attention to the destination address. Hedera users often use the format '0.0.xxxxx'. You MUST extract this exactly as provided. If they provide an EVM '0x' address, extract that instead.
       5. For 'analyze_wallet': If the user asks what is in their wallet, their balances, or asks for a portfolio analysis.
       6. For 'market_query': If the user asks for token prices, market updates, top tokens, or meme coins on Hedera.
-      7. In the 'reply' field, provide a natural, encouraging confirmation (e.g., "Sure! I've prepared that balance check for you." or "I've drafted that HBAR swap to SAUCE. Check the details below!")
+      7. If the user asks to cancel, abort, or stop a pending transaction, or simply changes their mind and wants to clear the board, output the JSON intent literally as "cancel".
+      8. In the 'reply' field, provide a natural, encouraging confirmation (e.g., "Sure! I've prepared that balance check for you.", "I've drafted that HBAR swap to SAUCE.", or "Got it, I've cancelled that transaction.")
 
       Avoid all technical prefixes. Just talk like a human expert.`
     });

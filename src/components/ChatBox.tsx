@@ -64,7 +64,14 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
         const intent = response.intent;
         const params = response.parameters;
 
-        if (intent === 'check_balance' || intent === 'analyze_wallet') {
+        if (intent === 'cancel') {
+          aiMessages.push({
+             id: uuidv4(),
+             role: 'ai',
+             content: response.reply || "Pending payloads have been aborted.",
+             intent: 'cancel'
+          });
+        } else if (intent === 'check_balance' || intent === 'analyze_wallet') {
           try {
             const target = params.targetAddress || hederaId || address;
             if (!target) {
@@ -162,7 +169,14 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto pt-10 pb-40 no-scrollbar space-y-4"
       >
-        {session.messages.map((msg, idx) => (
+        {session.messages.map((msg, idx) => {
+          let isExpired = false;
+          if (msg.isTransaction) {
+             const subsequentMessages = session.messages.slice(idx + 1);
+             isExpired = subsequentMessages.some(m => m.isTransaction || m.intent === 'cancel');
+          }
+          
+          return (
           <div key={msg.id || idx}>
             {msg.content && (
               <ChatMessageComponent role={msg.role} content={msg.content} />
@@ -177,13 +191,14 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
                   initialStatus={msg.txStatus as any || 'idle'}
                   initialHash={msg.txHash}
                   hederaId={hederaId}
+                  isExpired={isExpired}
                   onExecute={getExecutableFunction(msg.intent!, msg.parameters)!}
                   onUpdateState={(status, hash) => onUpdateTxState(msg.id, status, hash)}
                 />
               </div>
             )}
           </div>
-        ))}
+        )})}
         
         {isThinking && (
           <div className="flex items-center gap-3 ml-1 mb-8">

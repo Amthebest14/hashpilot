@@ -13,6 +13,7 @@ type TransactionCardProps = {
   initialStatus?: TxStatus;
   initialHash?: string | null;
   hederaId?: string;
+  isExpired?: boolean;
   onExecute: () => Promise<string>;
   onUpdateState: (status: TxStatus, hash?: string | null) => void;
 };
@@ -23,6 +24,7 @@ export default function TransactionCard({
   initialStatus = 'idle',
   initialHash = null,
   hederaId,
+  isExpired = false,
   onExecute,
   onUpdateState
 }: TransactionCardProps) {
@@ -63,13 +65,15 @@ export default function TransactionCard({
     onUpdateState('idle');
   };
 
+  const isEffectivelyExpired = isExpired && status !== 'success';
+
   return (
-    <div className="w-full max-w-md my-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className={`w-full max-w-md my-4 animate-in fade-in slide-in-from-bottom-4 duration-500 ${isEffectivelyExpired ? 'opacity-50' : ''}`}>
       <div className="bg-[#12141C] border border-[#222631] rounded-3xl overflow-hidden shadow-xl">
         {/* Header */}
         <div className="px-5 py-3 border-b border-[#222631] bg-[#1A1D27] flex items-center justify-between">
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8B95A5]">
-            {status === 'success' ? 'Transaction Confirmed' : status === 'error' ? 'Transaction Failed' : 'Copilot: Transaction Drafted'}
+            {status === 'success' ? 'Transaction Confirmed' : status === 'error' ? 'Transaction Failed' : isEffectivelyExpired ? 'Transaction Expired' : 'Copilot: Transaction Drafted'}
           </span>
           {status === 'success' && <CheckCircle2 size={14} className="text-green-400" />}
           {status === 'error' && <XCircle size={14} className="text-red-400" />}
@@ -125,9 +129,10 @@ export default function TransactionCard({
             {status === 'idle' && (
               <button 
                 onClick={handleExecute}
-                className="w-full py-4 bg-[#5C54E6] text-white rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-[#6F68F4] active:scale-[0.98] transition-all"
+                disabled={isEffectivelyExpired}
+                className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all ${isEffectivelyExpired ? 'bg-[#222631] text-[#8B95A5] cursor-not-allowed' : 'bg-[#5C54E6] text-white hover:bg-[#6F68F4] active:scale-[0.98] shadow-sm'}`}
               >
-                Execute Transaction
+                {isEffectivelyExpired ? 'Cancelled' : 'Execute Transaction'}
               </button>
             )}
 

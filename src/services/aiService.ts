@@ -11,6 +11,7 @@ export type IntentType =
   | 'get_market_data'
   | 'analyze_wallet'
   | 'market_query'
+  | 'cancel'
   | 'conversational';
 
 export type SupportedParameters = {
