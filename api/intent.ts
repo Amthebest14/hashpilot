@@ -17,13 +17,40 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Messages array is required' }), { status: 400 });
     }
 
-    const latestUserMessage = messages[messages.length - 1].content;
+    let latestUserMessage = messages[messages.length - 1].content;
     const historyRaw = messages.slice(0, -1);
     
-    const mappedHistory = historyRaw.map((msg: any) => ({
-      role: msg.role === 'ai' || msg.role === 'model' ? 'model' : 'user',
-      parts: [{ text: msg.content }]
-    }));
+    // Strict Sanitizer: Remove empty, Map roles, Group Consecutive
+    const sanitizedHistory: any[] = [];
+    
+    for (const msg of historyRaw) {
+      if (!msg.content || typeof msg.content !== 'string' || msg.content.trim() === '') {
+        continue; // Rule 3: Skip empty text
+      }
+      
+      const mappedRole = msg.role === 'ai' || msg.role === 'model' ? 'model' : 'user'; // Rule 1
+      
+      const lastEntry = sanitizedHistory[sanitizedHistory.length - 1];
+      if (lastEntry && lastEntry.role === mappedRole) {
+        // Rule 2: Ping-Pong. Same role found consecutively. Merge text.
+        lastEntry.parts[0].text += `\n\n${msg.content}`;
+      } else {
+        // Safe to push new
+        sanitizedHistory.push({
+          role: mappedRole,
+          parts: [{ text: msg.content }]
+        });
+      }
+    }
+
+    // Rule 4: If the array ends with a 'user' message, pop it and merge it into latestUserMessage
+    if (sanitizedHistory.length > 0) {
+      const lastEntry = sanitizedHistory[sanitizedHistory.length - 1];
+      if (lastEntry.role === 'user') {
+         const popped = sanitizedHistory.pop();
+         latestUserMessage = popped.parts[0].text + `\n\n` + latestUserMessage;
+      }
+    }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -93,7 +120,7 @@ export default async function handler(req: Request) {
     });
 
     const chat = model.startChat({
-      history: mappedHistory
+      history: sanitizedHistory
     });
 
     const result = await chat.sendMessage(latestUserMessage);
@@ -105,12 +132,12 @@ export default async function handler(req: Request) {
       headers: { 'Content-Type': 'application/json' }
     });
 
-  } catch (error) {
-    const errMsg = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Gemini API Error:', errMsg);
+  } catch (error: any) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error('Gemini SDK Crash:', errMsg, error.stack);
     return new Response(JSON.stringify({ 
       error: errMsg,
-      reply: `[API ERROR] ${errMsg}`
+      reply: `🚨 AI BRIDGE FAILURE: ${errMsg}`
     }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }
