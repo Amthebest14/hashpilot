@@ -102,38 +102,37 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
           }
         } else if (intent === 'market_query') {
             try {
-              // Client-side fetch using user's home IP (Bypasses Vercel/Datacenter blocks)
               const dsRes = await fetch('https://api.dexscreener.com/latest/dex/search?q=saucerswap');
               let lightDataString = "No live market data available.";
               
               if (dsRes.ok) {
                 const dsData = await dsRes.json();
-                console.log("DexScreener Raw Data:", dsData); // Diagnostic Log
                 
-                // Compress into a single light string to prevent AI/Edge crashes
-                lightDataString = (dsData.pairs || []).slice(0, 6)
-                  .map((p: any) => `${p.baseToken?.symbol || '?'}: $${p.priceUsd || '0'} (24h Vol: $${p.volume?.h24 || '0'})`)
-                  .join(' | ');
+                // Extract top 5 pairs and format as a compact string
+                const topTokens = (dsData.pairs || []).slice(0, 5);
+                lightDataString = topTokens.map((p: any) => 
+                  `${p.baseToken?.symbol || '?'}: $${p.priceUsd || '0'} (24h Vol: $${p.volume?.h24 || '0'})`
+                ).join(' | ');
               } else {
-                 console.error("DexScreener Fetch Failed. Status:", dsRes.status); // Diagnostic Log
+                 console.error("DexScreener Fetch Failed. Status:", dsRes.status);
               }
 
-              const summaryRes = await fetch('/api/summarize', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ data: lightDataString, query: text })
-              });
+              // Feed the lightweight string back into the main AI brain
+              const followUpPayload = [
+                ...historyPayload, 
+                { role: 'model' as const, content: "Fetching market data..." }, 
+                { role: 'user' as const, content: `Here is the raw market data based on my request. Please summarize it naturally and concisely:\n\n${lightDataString}` }
+              ];
               
-              const summaryJson = await summaryRes.json();
-              console.log("Gemini Edge Response:", summaryJson); // Diagnostic Log
+              const summaryResponse = await queryAI(followUpPayload);
               
               aiMessages.push({
                 id: uuidv4(),
                 role: 'ai',
-                content: summaryJson.summary
+                content: summaryResponse.reply || lightDataString
               });
             } catch (err) {
-              console.error("DexScreener/Summarize Execution Failed:", err); // Diagnostic Log
+              console.error("DexScreener Analytics Engine Failed:", err);
               aiMessages.push({ id: uuidv4(), role: 'ai', content: "I'm having trouble fetching live market intel right now. SaucerSwap signals are currently faint!" });
             }
         } else {
