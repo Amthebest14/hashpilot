@@ -102,19 +102,34 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
           }
         } else if (intent === 'market_query') {
             try {
+              // Isolated Binance HBAR Price Fetch
+              let hbarPriceLine = "";
+              try {
+                const bRes = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=HBARUSDT');
+                if (bRes.ok) {
+                  const bData = await bRes.json();
+                  const price = parseFloat(bData.price).toFixed(4);
+                  hbarPriceLine = `HBAR is $${price}`;
+                }
+              } catch (bErr) {
+                console.warn("[BINANCE] Isolated fetch failed:", bErr);
+              }
+
               const dsRes = await fetch('https://api.dexscreener.com/latest/dex/search?q=saucerswap');
-              let lightDataString = "No live market data available.";
+              let lightDataString = hbarPriceLine ? `${hbarPriceLine} | ` : "";
               
               if (dsRes.ok) {
-                const dsData = await dsRes.json();
+                const dsData = await dsRes.ok ? await dsRes.json() : { pairs: [] };
                 
                 // Extract top 5 pairs and format as a compact string
                 const topTokens = (dsData.pairs || []).slice(0, 5);
-                lightDataString = topTokens.map((p: any) => 
+                const dsString = topTokens.map((p: any) => 
                   `${p.baseToken?.symbol || '?'}: $${p.priceUsd || '0'} (24h Vol: $${p.volume?.h24 || '0'})`
                 ).join(' | ');
+                lightDataString += dsString;
               } else {
                  console.error("DexScreener Fetch Failed. Status:", dsRes.status);
+                 if (!lightDataString) lightDataString = "No live market data available.";
               }
 
               // Feed the lightweight string back into the main AI brain

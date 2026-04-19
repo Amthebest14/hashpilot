@@ -138,6 +138,36 @@ export function useActionRouter() {
           }
         };
       }
+      
+      case 'wrap_hbar': {
+        return async () => {
+          const { amount } = parameters;
+          if (!amount) throw new Error('Missing wrap amount.');
+          if (!walletClient || !address) throw new Error("Wallet client not ready.");
+          
+          console.log(`[ROUTER] Wrapping ${amount} HBAR into WHBAR...`);
+          
+          const whbarAddress = TESTNET_TOKENS['WHBAR'] as `0x${string}`;
+          
+          // WHBAR Deposit ABI
+          const wrapAbi = [{
+            "name": "deposit",
+            "type": "function",
+            "stateMutability": "payable",
+            "inputs": [],
+            "outputs": []
+          }] as const;
+
+          return await walletClient.writeContract({
+            address: whbarAddress,
+            abi: wrapAbi,
+            functionName: 'deposit',
+            args: [],
+            value: parseEther(amount),
+            gas: 3000000n
+          });
+        };
+      }
 
       default:
         return null;

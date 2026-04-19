@@ -119,8 +119,9 @@ export default async function handler(req: Request) {
       4. For 'transfer_token': Pay close attention to the destination address. Hedera users often use the format '0.0.xxxxx'. You MUST extract this exactly as provided. If they provide an EVM '0x' address, extract that instead.
       5. For 'analyze_wallet': If the user asks what is in their wallet, their balances, or asks for a portfolio analysis.
       6. For 'market_query': If the user asks for token prices, market updates, top tokens, or meme coins on Hedera.
-      7. If the user asks to cancel, abort, or stop a pending transaction, or simply changes their mind and wants to clear the board, output the JSON intent literally as "cancel".
-      8. In the 'reply' field, provide a natural, encouraging confirmation (e.g., "Sure! I've prepared that balance check for you.", "I've drafted that HBAR swap to SAUCE.", or "Got it, I've cancelled that transaction.")
+      7. If the user asks to wrap HBAR, convert HBAR to WHBAR, or mint WHBAR, output the JSON intent as "wrap_hbar" and extract the numeric "amount".
+      8. If the user asks to cancel, abort, or stop a pending transaction, or simply changes their mind and wants to clear the board, output the JSON intent literally as "cancel".
+      9. In the 'reply' field, provide a natural, encouraging confirmation (e.g., "Sure! I've prepared that balance check for you.", "I've drafted that HBAR swap to SAUCE.", or "Got it, I've prepared the HBAR wrapping transaction for you.")
 
       Avoid all technical prefixes. Just talk like a human expert.`
     });
