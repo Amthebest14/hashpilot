@@ -183,16 +183,16 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
         {isThinking && (
           <div className="flex items-center gap-3 ml-1 mb-8">
              <div className="flex gap-1">
-                <div className="w-1.5 h-1.5 bg-soft-purple rounded-full animate-bounce [animation-duration:1s]"></div>
-                <div className="w-1.5 h-1.5 bg-soft-purple rounded-full animate-bounce [animation-duration:1s] [animation-delay:0.2s]"></div>
-                <div className="w-1.5 h-1.5 bg-soft-purple rounded-full animate-bounce [animation-duration:1s] [animation-delay:0.4s]"></div>
-             </div>
-             <span className="text-[10px] uppercase tracking-[0.3em] font-black text-soft-purple/60">Processing Neural Link</span>
+                 <div className="w-1.5 h-1.5 bg-[#5C54E6] rounded-full animate-bounce [animation-duration:1s]"></div>
+                 <div className="w-1.5 h-1.5 bg-[#5C54E6] rounded-full animate-bounce [animation-duration:1s] [animation-delay:0.2s]"></div>
+                 <div className="w-1.5 h-1.5 bg-[#5C54E6] rounded-full animate-bounce [animation-duration:1s] [animation-delay:0.4s]"></div>
+              </div>
+              <span className="text-[10px] uppercase tracking-[0.3em] font-black text-[#5C54E6]/60">Processing Neural Link</span>
           </div>
         )}
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-main-blue via-main-blue/80 to-transparent pt-12">
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#090A0F] via-[#090A0F]/80 to-transparent pt-12">
         <ChatInput onSend={handleSend} disabled={isThinking} />
       </div>
     </div>

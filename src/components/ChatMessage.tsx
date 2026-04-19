@@ -11,20 +11,18 @@ export default function ChatMessage({ role, content }: ChatMessageProps) {
       <div className={`flex flex-col max-w-[85%] md:max-w-[70%] ${isAI ? 'items-start' : 'items-end'}`}>
         {isAI && (
           <div className="flex items-center gap-2 mb-2 ml-1">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-soft-purple to-main-blue flex items-center justify-center p-[1px]">
-               <div className="w-full h-full bg-main-blue rounded-full flex items-center justify-center">
-                 <span className="text-[10px] font-bold text-soft-purple">H</span>
-               </div>
+            <div className="w-5 h-5 rounded-sm bg-[#5C54E6] flex items-center justify-center">
+               <span className="text-[10px] font-bold text-white">H</span>
             </div>
-            <span className="text-[11px] uppercase tracking-widest font-bold text-soft-purple/80">Hashpilot</span>
+            <span className="text-[11px] uppercase tracking-widest font-bold text-[#8B95A5]">Hashpilot</span>
           </div>
         )}
         
         <div 
-          className={`px-5 py-4 rounded-3xl shadow-xl transition-all duration-300 ${
+          className={`transition-all duration-300 ${
             isAI 
-              ? 'glass-panel text-white rounded-tl-sm' 
-              : 'bg-soft-purple text-white rounded-tr-sm purple-glow'
+              ? 'py-2 border-l-2 border-[#5C54E6] pl-4 text-[#E2E8F0]' 
+              : 'px-5 py-4 bg-[#1A1D27] text-[#E2E8F0] rounded-lg shadow-sm'
           }`}
         >
           <p className="text-sm md:text-base leading-relaxed md:leading-loose whitespace-pre-wrap font-medium">

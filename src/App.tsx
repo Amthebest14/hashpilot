@@ -39,14 +39,14 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-main-blue text-white relative overflow-hidden flex font-sans selection:bg-soft-purple selection:text-white">
+    <div className="min-h-screen w-full bg-[#090A0F] text-[#E2E8F0] relative overflow-hidden flex font-sans selection:bg-[#5C54E6] selection:text-white">
       <Toaster
         position="top-center"
         toastOptions={{
           style: {
-            background: '#0a0a1a', // main-blue fallback
-            color: '#fff',
-            border: '1px solid rgba(139, 92, 246, 0.3)', // soft-purple border
+            background: '#12141C', 
+            color: '#E2E8F0',
+            border: '1px solid #222631', 
             fontFamily: 'inherit',
             fontSize: '11px',
             fontWeight: '900',
@@ -58,14 +58,8 @@ function App() {
         }}
       />
       
-      {/* Dynamic Aura Background */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-soft-purple/5 blur-[120px] rounded-full animate-float"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-soft-purple/5 blur-[120px] rounded-full animate-float" style={{ animationDelay: '-3s' }}></div>
-      </div>
-      
       {/* Sidebar - Always Mounted */}
-      <div className="w-1/5 h-screen relative z-30 hidden md:block border-r border-white/5">
+      <div className="w-1/5 h-screen relative z-30 hidden md:block border-r border-[#222631] bg-[#090A0F]">
         <HistorySidebar 
           sessions={sessions} 
           activeSessionId={activeSessionId} 
@@ -78,18 +72,18 @@ function App() {
       </div>
 
       {/* Main Area */}
-      <div className="flex-1 h-screen relative z-10 flex flex-col overflow-hidden">
+      <div className="flex-1 h-screen relative z-10 flex flex-col overflow-hidden bg-[#090A0F]">
         {/* Top Navbar */}
-        <header className="h-20 shrink-0 border-b border-white/5 flex items-center justify-between px-10 relative z-40 bg-main-blue/50 backdrop-blur-xl">
+        <header className="h-20 shrink-0 border-b border-[#222631] flex items-center justify-between px-10 relative z-40 bg-[#12141C]">
            <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-soft-purple">Hedera Network</span>
-              <h1 className="text-xl font-black italic tracking-tighter uppercase">{activeTab}</h1>
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#5C54E6]">Hedera Network</span>
+              <h1 className="text-xl font-black italic tracking-tighter uppercase text-[#E2E8F0]">{activeTab}</h1>
            </div>
            
            <div className="flex items-center gap-6">
-              <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/5">
+              <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-[#1A1D27] rounded-full border border-[#222631]">
                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                 <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Testnet Node Active</span>
+                 <span className="text-[9px] font-black uppercase tracking-widest text-[#8B95A5]">Testnet Node Active</span>
               </div>
               <CustomWalletButton />
            </div>
@@ -107,7 +101,7 @@ function App() {
                 />
               ) : (
                 <div className="flex-1 flex items-center justify-center">
-                  <div className="animate-pulse text-soft-purple/50 font-black tracking-widest uppercase">Initialising Sync...</div>
+                  <div className="animate-pulse text-[#8B95A5] font-black tracking-widest uppercase">Initialising Sync...</div>
                 </div>
               )}
             </div>

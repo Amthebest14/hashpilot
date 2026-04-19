@@ -177,17 +177,17 @@ export default function HistorySidebar({
   onTabChange: (tab: 'copilot' | 'leaderboard') => void;
 }) {
   return (
-    <aside className="w-full h-full bg-main-blue/40 border-r border-white/5 flex flex-col pt-10 p-5 overflow-hidden">
+    <aside className="w-full h-full bg-[#090A0F] border-r border-[#222631] flex flex-col pt-10 p-5 overflow-hidden">
       <button 
         onClick={onNewSession}
-        className="w-full py-4 mb-10 flex items-center justify-center gap-3 bg-soft-purple text-white rounded-2xl font-bold text-sm tracking-wide purple-glow hover:scale-[1.02] active:scale-[0.98] transition-all"
+        className="w-full py-4 mb-10 flex items-center justify-center gap-3 bg-[#5C54E6] text-white rounded-2xl font-bold text-sm tracking-wide hover:bg-[#6F68F4] active:scale-[0.98] transition-all shadow-sm"
       >
         <Plus size={18} strokeWidth={3} />
         New Chat
       </button>
 
       <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar mb-6">
-        <div className="text-[11px] uppercase text-white/30 mb-5 tracking-[0.2em] font-black ml-2 flex justify-between">
+        <div className="text-[11px] uppercase text-[#8B95A5] mb-5 tracking-[0.2em] font-black ml-2 flex justify-between">
           <span>Recent Protocols</span>
           {isLoading && <span className="animate-pulse">Syncing...</span>}
         </div>
@@ -200,11 +200,11 @@ export default function HistorySidebar({
             }}
             className={`w-full text-left px-5 py-4 rounded-2xl flex items-center gap-4 transition-all duration-300 ${
               activeSessionId === s.id && activeTab === 'copilot'
-                ? 'bg-white/10 text-white font-bold ring-1 ring-white/10' 
-                : 'text-white/50 hover:text-white/80 hover:bg-white/5'
+                ? 'bg-[#1A1D27] text-[#E2E8F0] font-bold ring-1 ring-[#222631]' 
+                : 'text-[#8B95A5] hover:text-[#E2E8F0] hover:bg-[#1A1D27]'
             }`}
           >
-            <MessageSquare size={16} className={activeSessionId === s.id && activeTab === 'copilot' ? 'text-soft-purple' : 'text-white/20'} />
+            <MessageSquare size={16} className={activeSessionId === s.id && activeTab === 'copilot' ? 'text-[#5C54E6]' : 'text-[#8B95A5]'} />
             <span className="text-sm truncate leading-none mt-[2px]">{s.title}</span>
           </button>
         ))}
@@ -212,31 +212,31 @@ export default function HistorySidebar({
 
       {/* State-Based Tab Navigation */}
       <div className="flex flex-col gap-2 mb-6">
-        <div className="text-[10px] uppercase text-white/20 mb-2 tracking-[0.2em] font-black ml-2">Navigation</div>
+        <div className="text-[10px] uppercase text-[#8B95A5] mb-2 tracking-[0.2em] font-black ml-2">Navigation</div>
         <button 
           onClick={() => onTabChange('copilot')}
-          className={`flex items-center gap-3 px-5 py-3 rounded-2xl transition-all ${activeTab === 'copilot' ? 'bg-soft-purple/10 text-white ring-1 ring-soft-purple/30' : 'text-white/40 hover:text-white/60 hover:bg-white/5'}`}
+          className={`flex items-center gap-3 px-5 py-3 rounded-2xl transition-all ${activeTab === 'copilot' ? 'bg-[#1A1D27] text-[#E2E8F0] ring-1 ring-[#5C54E6]/50' : 'text-[#8B95A5] hover:text-[#E2E8F0] hover:bg-[#1A1D27]'}`}
         >
-          <div className={`w-1.5 h-1.5 rounded-full ${activeTab === 'copilot' ? 'bg-soft-purple' : 'bg-white/10'}`}></div>
+          <div className={`w-1.5 h-1.5 rounded-full ${activeTab === 'copilot' ? 'bg-[#5C54E6]' : 'bg-[#222631]'}`}></div>
           <span className="text-[11px] font-black uppercase tracking-widest">[ Copilot ]</span>
         </button>
         <button 
           onClick={() => onTabChange('leaderboard')}
-          className={`flex items-center gap-3 px-5 py-3 rounded-2xl transition-all ${activeTab === 'leaderboard' ? 'bg-soft-purple/10 text-white ring-1 ring-soft-purple/30' : 'text-white/40 hover:text-white/60 hover:bg-white/5'}`}
+          className={`flex items-center gap-3 px-5 py-3 rounded-2xl transition-all ${activeTab === 'leaderboard' ? 'bg-[#1A1D27] text-[#E2E8F0] ring-1 ring-[#5C54E6]/50' : 'text-[#8B95A5] hover:text-[#E2E8F0] hover:bg-[#1A1D27]'}`}
         >
-          <div className={`w-1.5 h-1.5 rounded-full ${activeTab === 'leaderboard' ? 'bg-soft-purple' : 'bg-white/10'}`}></div>
+          <div className={`w-1.5 h-1.5 rounded-full ${activeTab === 'leaderboard' ? 'bg-[#5C54E6]' : 'bg-[#222631]'}`}></div>
           <span className="text-[11px] font-black uppercase tracking-widest">[ Leaderboard ]</span>
         </button>
       </div>
 
-      <div className="mt-auto pt-6 border-t border-white/5 flex flex-col gap-4">
-        <div className="flex items-center gap-4 p-4 glass-panel rounded-2xl">
-           <div className="w-8 h-8 rounded-full bg-soft-purple/20 flex items-center justify-center text-soft-purple text-soft-purple">
+      <div className="mt-auto pt-6 border-t border-[#222631] flex flex-col gap-4">
+        <div className="flex items-center gap-4 p-4 bg-[#1A1D27] rounded-2xl border border-[#222631]">
+           <div className="w-8 h-8 rounded-full bg-[#5C54E6]/20 flex items-center justify-center text-[#5C54E6]">
              <Zap size={16} />
            </div>
            <div className="flex flex-col">
-              <span className="text-xs font-bold text-white">Active Node</span>
-              <span className="text-[10px] text-white/40 uppercase tracking-tighter">Connected</span>
+              <span className="text-xs font-bold text-[#E2E8F0]">Active Node</span>
+              <span className="text-[10px] text-[#8B95A5] uppercase tracking-tighter">Connected</span>
            </div>
         </div>
       </div>

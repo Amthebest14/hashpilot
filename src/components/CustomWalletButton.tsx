@@ -14,10 +14,10 @@ export default function CustomWalletButton() {
     return (
       <button 
         onClick={() => open()}
-        className="group relative px-5 py-2.5 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3 transition-all hover:bg-white/10 active:scale-95 purple-glow"
+        className="group relative px-5 py-2.5 bg-[#1A1D27] border border-[#222631] rounded-2xl flex items-center gap-3 transition-all hover:bg-[#222631] active:scale-95"
       >
         <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-        <span className="text-[11px] font-black uppercase tracking-widest text-white/80 font-mono">
+        <span className="text-[11px] font-black uppercase tracking-widest text-[#E2E8F0] font-mono">
           {hederaId || truncateAddress(address)}
         </span>
       </button>
@@ -27,7 +27,7 @@ export default function CustomWalletButton() {
   return (
     <button 
       onClick={() => open()}
-      className="group relative px-6 py-2.5 bg-soft-purple text-white rounded-2xl flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-lg purple-glow"
+      className="group relative px-6 py-2.5 bg-[#5C54E6] text-white rounded-2xl flex items-center gap-2 transition-all hover:bg-[#6F68F4] active:scale-95 shadow-sm"
     >
       <Wallet size={14} className="group-hover:rotate-12 transition-transform" />
       <span className="text-[11px] font-black uppercase tracking-[0.2em]">
