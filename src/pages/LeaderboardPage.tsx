@@ -41,53 +41,53 @@ export default function LeaderboardPage() {
       <div className="flex flex-col gap-10">
         {/* Header Section */}
         <div className="flex flex-col gap-2">
-          <span className="text-[10px] font-black uppercase tracking-[0.4em] text-soft-purple">Network Merit</span>
-          <h2 className="text-4xl font-black italic tracking-tighter">PILOT LEADERBOARD</h2>
+          <span className="text-[11px] font-medium tracking-wide text-[#5C54E6]">Network Merit</span>
+          <h2 className="text-4xl font-bold tracking-wide capitalize">Pilot Leaderboard</h2>
         </div>
 
         {/* Personal Stat Card */}
         {isConnected && (
-          <div className="glass-panel p-8 rounded-3xl border border-white/10 relative overflow-hidden purple-glow">
+          <div className="bg-[#12141C] p-8 rounded-2xl border border-[#222631] relative overflow-hidden shadow-xl">
             <div className="absolute top-0 right-0 p-6 opacity-5">
-              <h1 className="text-9xl font-black italic tracking-tighter -mr-10 -mt-10">RANK</h1>
+              <h1 className="text-9xl font-bold italic tracking-tighter -mr-10 -mt-10">RANK</h1>
             </div>
 
             <div className="absolute top-6 right-6 z-20">
               <button 
                 onClick={handleShare}
-                className="flex items-center gap-2 px-4 py-2 bg-soft-purple text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg"
+                className="flex items-center gap-2 px-4 py-2 bg-[#5C54E6] text-white rounded-xl text-[11px] font-medium tracking-wide hover:bg-[#6F68F4] active:scale-95 transition-all shadow-sm"
               >
                 <Share2 size={14} />
-                𝕏 Share Rank
+                Share Rank
               </button>
             </div>
             
             <div className="grid md:grid-cols-3 gap-8 relative z-10">
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Active Pilot</span>
-                <span className="text-xl font-bold truncate font-mono">{activeHederaId || (address ? truncateAddress(address) : '---')}</span>
+                <span className="text-[11px] font-medium tracking-wide text-[#8B95A5]">Active Pilot</span>
+                <span className="text-xl font-medium tracking-wide truncate font-mono text-[#E2E8F0]">{activeHederaId || (address ? truncateAddress(address) : '---')}</span>
               </div>
               
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Hash Points (HP)</span>
-                <span className="text-3xl font-black text-soft-purple">{userProfile?.hp_balance || 0}</span>
+                <span className="text-[11px] font-medium tracking-wide text-[#8B95A5]">Hash Points (HP)</span>
+                <span className="text-3xl font-bold text-[#5C54E6]">{userProfile?.hp_balance || 0}</span>
               </div>
 
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Dynamic Rank</span>
-                <span className="text-xl font-bold italic tracking-tight">{getRankFromHP(userProfile?.hp_balance || 0)}</span>
+                <span className="text-[11px] font-medium tracking-wide text-[#8B95A5]">Dynamic Rank</span>
+                <span className="text-xl font-bold tracking-wide text-[#E2E8F0]">{getRankFromHP(userProfile?.hp_balance || 0)}</span>
               </div>
             </div>
 
             {/* Progress Bar */}
             <div className="mt-8">
               <div className="flex justify-between items-end mb-2">
-                <span className="text-[9px] font-black uppercase tracking-widest text-white/20">Progression to {getNextRankThreshold(userProfile?.hp_balance || 0) || 'Max Rank'}</span>
-                <span className="text-[10px] font-black text-soft-purple">{getRankProgress(userProfile?.hp_balance || 0)}%</span>
+                <span className="text-[11px] font-medium tracking-wide text-[#8B95A5]">Progression to {getNextRankThreshold(userProfile?.hp_balance || 0) || 'Max Rank'}</span>
+                <span className="text-[11px] font-medium text-[#5C54E6]">{getRankProgress(userProfile?.hp_balance || 0)}%</span>
               </div>
-              <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+              <div className="h-2 w-full bg-[#1A1D27] rounded-full overflow-hidden border border-[#222631]">
                 <div 
-                  className="h-full bg-soft-purple transition-all duration-1000 ease-out"
+                  className="h-full bg-[#5C54E6] transition-all duration-1000 ease-out"
                   style={{ width: `${getRankProgress(userProfile?.hp_balance || 0)}%` }}
                 ></div>
               </div>
@@ -97,35 +97,35 @@ export default function LeaderboardPage() {
 
         {/* Global Rankings Table */}
         <div className="flex flex-col gap-4">
-          <div className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-2">Top 50 Pilots</div>
+          <div className="text-[11px] font-medium tracking-wide text-[#8B95A5] ml-2">Top 50 Pilots</div>
           
-          <div className="glass-panel rounded-3xl overflow-hidden border border-white/5">
+          <div className="bg-[#12141C] rounded-2xl overflow-hidden border border-[#222631]">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-white/5 bg-white/5 font-black text-[9px] uppercase tracking-[0.2em] text-white/40">
+                <tr className="border-b border-[#222631] bg-[#1A1D27] font-medium text-[11px] tracking-wide text-[#8B95A5]">
                   <th className="px-8 py-4">#</th>
                   <th className="px-8 py-4">Pilot ID</th>
                   <th className="px-8 py-4">Rank</th>
                   <th className="px-8 py-4 text-right">Points</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-[#222631]">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={4} className="px-8 py-20 text-center text-[10px] font-black uppercase tracking-widest text-white/20 animate-pulse">Synchronizing Records...</td>
+                    <td colSpan={4} className="px-8 py-20 text-center text-[11px] font-medium tracking-wide text-[#8B95A5] animate-pulse">Synchronizing Records...</td>
                   </tr>
                 ) : leaderboard.length > 0 ? (
                   leaderboard.map((user, index) => (
-                    <tr key={user.wallet_address} className={`hover:bg-white/5 transition-colors ${user.wallet_address === address ? 'bg-soft-purple/10' : ''}`}>
-                      <td className="px-8 py-5 font-black text-soft-purple/60 italic">#{index + 1}</td>
-                      <td className="px-8 py-5 font-mono text-sm">{displayId(user)}</td>
-                      <td className="px-8 py-5 font-bold text-xs italic tracking-tighter text-white/60">{getRankFromHP(user.hp_balance)}</td>
-                      <td className="px-8 py-5 text-right font-black text-white">{user.hp_balance} HP</td>
+                    <tr key={user.wallet_address} className={`hover:bg-[#1A1D27] transition-colors ${user.wallet_address === address ? 'bg-[#5C54E6]/10' : ''}`}>
+                      <td className="px-8 py-5 font-bold text-[#5C54E6]/60">#{index + 1}</td>
+                      <td className="px-8 py-5 font-mono text-sm text-[#E2E8F0]">{displayId(user)}</td>
+                      <td className="px-8 py-5 font-bold text-xs tracking-wide text-[#8B95A5]">{getRankFromHP(user.hp_balance)}</td>
+                      <td className="px-8 py-5 text-right font-medium text-[#E2E8F0]">{user.hp_balance} HP</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="px-8 py-20 text-center text-xs text-white/20">No data found in network registry.</td>
+                    <td colSpan={4} className="px-8 py-20 text-center text-xs text-[#8B95A5]">No data found in network registry.</td>
                   </tr>
                 )}
               </tbody>

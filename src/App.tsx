@@ -74,16 +74,16 @@ function App() {
       {/* Main Area */}
       <div className="flex-1 h-screen relative z-10 flex flex-col overflow-hidden bg-[#090A0F]">
         {/* Top Navbar */}
-        <header className="h-20 shrink-0 border-b border-[#222631] flex items-center justify-between px-10 relative z-40 bg-[#12141C]">
+        <header className="h-20 shrink-0 border-b border-[#222631] flex items-center justify-between px-10 relative z-40 bg-[#090A0F]/80 backdrop-blur-md">
            <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#5C54E6]">Hedera Network</span>
-              <h1 className="text-xl font-black italic tracking-tighter uppercase text-[#E2E8F0]">{activeTab}</h1>
+              <span className="text-[11px] font-medium tracking-wide text-[#5C54E6]">Hedera Network</span>
+              <h1 className="text-xl font-bold tracking-wide capitalize text-[#E2E8F0]">{activeTab}</h1>
            </div>
            
            <div className="flex items-center gap-6">
-              <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-[#1A1D27] rounded-full border border-[#222631]">
+              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-[#1A1D27] rounded-xl border border-[#222631]">
                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                 <span className="text-[9px] font-black uppercase tracking-widest text-[#8B95A5]">Testnet Node Active</span>
+                 <span className="text-[11px] font-medium tracking-wide text-[#8B95A5]">Testnet Node Active</span>
               </div>
               <CustomWalletButton />
            </div>

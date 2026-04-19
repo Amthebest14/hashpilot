@@ -192,7 +192,7 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
         )}
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#090A0F] via-[#090A0F]/80 to-transparent pt-12">
+      <div className="absolute bottom-0 left-0 right-0 bg-[#090A0F]/80 backdrop-blur-md pt-6 border-t border-[#222631]">
         <ChatInput onSend={handleSend} disabled={isThinking} />
       </div>
     </div>
