@@ -166,7 +166,8 @@ export default function HistorySidebar({
   onNewSession,
   isLoading,
   activeTab,
-  onTabChange
+  onTabChange,
+  onCloseMobile
 }: {
   sessions: ChatSession[];
   activeSessionId: string | null;
