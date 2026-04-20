@@ -175,11 +175,15 @@ export default function HistorySidebar({
   isLoading?: boolean;
   activeTab: 'copilot' | 'leaderboard';
   onTabChange: (tab: 'copilot' | 'leaderboard') => void;
+  onCloseMobile?: () => void;
 }) {
   return (
-    <aside className="w-full h-full bg-[#090A0F] border-r border-[#222631] flex flex-col pt-10 p-5 overflow-hidden">
+    <aside className="w-full h-full bg-[#090A0F] md:border-r border-[#222631] flex flex-col pt-10 p-5 overflow-hidden">
       <button 
-        onClick={onNewSession}
+        onClick={() => {
+          onNewSession();
+          if (onCloseMobile) onCloseMobile();
+        }}
         className="w-full py-4 mb-10 flex items-center justify-center gap-3 bg-[#5C54E6] text-white rounded-2xl font-bold text-sm tracking-wide hover:bg-[#6F68F4] active:scale-[0.98] transition-all shadow-sm"
       >
         <Plus size={18} strokeWidth={3} />
@@ -197,6 +201,7 @@ export default function HistorySidebar({
             onClick={() => {
               onSelectSession(s.id);
               onTabChange('copilot');
+              if (onCloseMobile) onCloseMobile();
             }}
             className={`w-full text-left px-5 py-4 rounded-2xl flex items-center gap-4 transition-all duration-300 ${
               activeSessionId === s.id && activeTab === 'copilot'
@@ -214,14 +219,20 @@ export default function HistorySidebar({
       <div className="flex flex-col gap-2 mb-6">
         <div className="text-[11px] font-medium text-[#8B95A5] mb-2 tracking-wide ml-2">Navigation</div>
         <button 
-          onClick={() => onTabChange('copilot')}
+          onClick={() => {
+             onTabChange('copilot');
+             if (onCloseMobile) onCloseMobile();
+          }}
           className={`flex items-center gap-3 px-5 py-3 rounded-xl transition-all border ${activeTab === 'copilot' ? 'bg-[#1A1D27] text-[#E2E8F0] border-[#5C54E6]/50 shadow-sm' : 'text-[#8B95A5] hover:text-[#E2E8F0] hover:bg-[#1A1D27] border-transparent'}`}
         >
           <div className={`w-1.5 h-1.5 rounded-full ${activeTab === 'copilot' ? 'bg-[#5C54E6]' : 'bg-[#222631]'}`}></div>
           <span className="text-sm font-medium tracking-wide capitalize">Copilot</span>
         </button>
         <button 
-          onClick={() => onTabChange('leaderboard')}
+          onClick={() => {
+             onTabChange('leaderboard');
+             if (onCloseMobile) onCloseMobile();
+          }}
           className={`flex items-center gap-3 px-5 py-3 rounded-xl transition-all border ${activeTab === 'leaderboard' ? 'bg-[#1A1D27] text-[#E2E8F0] border-[#5C54E6]/50 shadow-sm' : 'text-[#8B95A5] hover:text-[#E2E8F0] hover:bg-[#1A1D27] border-transparent'}`}
         >
           <div className={`w-1.5 h-1.5 rounded-full ${activeTab === 'leaderboard' ? 'bg-[#5C54E6]' : 'bg-[#222631]'}`}></div>

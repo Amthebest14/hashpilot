@@ -30,7 +30,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
             onChange={(e) => setInput(e.target.value)}
             disabled={disabled}
             placeholder="Type your message to Hashpilot..."
-            className="flex-1 bg-transparent border-none text-[#E2E8F0] outline-none px-8 py-5 text-base md:text-lg placeholder-[#8B95A5] selection:bg-[#5C54E6] selection:text-white"
+            className="flex-1 bg-transparent border-none text-[#E2E8F0] outline-none px-4 md:px-8 py-4 md:py-5 text-sm md:text-lg placeholder-[#8B95A5] selection:bg-[#5C54E6] selection:text-white"
             autoFocus
           />
           <button 

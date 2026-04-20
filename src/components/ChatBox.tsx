@@ -197,7 +197,7 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
             )}
             
             {msg.isTransaction && (
-              <div className="flex justify-start mb-8 ml-8">
+              <div className="flex justify-start mb-4 md:mb-8 ml-2 md:ml-8 mr-2 md:mr-0 max-w-full overflow-hidden">
                 <TransactionCard 
                   msgId={msg.id}
                   intent={msg.intent!}
