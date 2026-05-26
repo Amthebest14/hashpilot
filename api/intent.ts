@@ -140,7 +140,39 @@ export default async function handler(req: Request) {
 
     const result = await chat.sendMessage(latestUserMessage);
     const responseText = result.response.text();
-    const jsonOutput = JSON.parse(responseText);
+
+    // --- ROBUST PARSER: strip markdown fences if Gemini wrapped output ---
+    let cleanText = responseText.trim();
+    const fenceMatch = cleanText.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenceMatch) {
+      cleanText = fenceMatch[1].trim();
+    }
+
+    const jsonOutput = JSON.parse(cleanText);
+
+    // --- SANITIZE: strip any residual stringified JSON bleed from parameter strings ---
+    if (jsonOutput.parameters && typeof jsonOutput.parameters === 'object') {
+      const stringFields: Array<keyof typeof jsonOutput.parameters> = [
+        'tokenSymbol', 'targetAddress', 'destination', 'amount', 
+        'fiatAmountUsd', 'tokenIn', 'tokenOut', 'asset'
+      ];
+      for (const field of stringFields) {
+        const val = jsonOutput.parameters[field];
+        if (typeof val === 'string') {
+          // A valid simple value shouldn't contain JSON-like characters; truncate at first comma/brace/quote
+          const firstJunk = val.search(/[,'{}\[\]]/);
+          if (firstJunk > 0) {
+            jsonOutput.parameters[field] = val.substring(0, firstJunk).trim();
+          }
+        }
+      }
+      // Force tokenSymbol to uppercase alpha only
+      if (typeof jsonOutput.parameters.tokenSymbol === 'string') {
+        jsonOutput.parameters.tokenSymbol = jsonOutput.parameters.tokenSymbol
+          .toUpperCase()
+          .replace(/[^A-Z]/g, '');
+      }
+    }
 
     return new Response(JSON.stringify(jsonOutput), {
       status: 200,
