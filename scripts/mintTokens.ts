@@ -46,7 +46,31 @@ async function main() {
   console.log(`Using Treasury Account ID: ${treasuryIdStr}`);
 
   const treasuryId = AccountId.fromString(treasuryIdStr);
-  const treasuryKey = PrivateKey.fromString(treasuryKeyStr);
+  
+  let treasuryKey: PrivateKey;
+  try {
+    if (treasuryKeyStr.startsWith('0x')) {
+      // Try ECDSA first for 0x keys
+      try {
+        treasuryKey = PrivateKey.fromStringECDSA(treasuryKeyStr);
+      } catch (e) {
+        treasuryKey = PrivateKey.fromStringED25519(treasuryKeyStr);
+      }
+    } else {
+      try {
+        treasuryKey = PrivateKey.fromString(treasuryKeyStr);
+      } catch (e) {
+        try {
+          treasuryKey = PrivateKey.fromStringECDSA(treasuryKeyStr);
+        } catch (e2) {
+          treasuryKey = PrivateKey.fromStringED25519(treasuryKeyStr);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Failed to parse treasury private key:', err);
+    process.exit(1);
+  }
 
   // Initialize Hedera client for Testnet
   const client = Client.forTestnet();
