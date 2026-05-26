@@ -74,7 +74,7 @@ export default async function handler(req: Request) {
         intent: {
           type: SchemaType.STRING,
           enum: [
-            "check_balance", "transfer_token", "swap_token", "create_token", 
+            "check_balance", "transfer_token", "pay_service", "swap_token", "create_token", 
             "stake_hbar", "unstake_hbar", "wrap_hbar", "airdrop_tokens", 
             "mint_nft", "get_market_data", "analyze_wallet", "market_query", "cancel", "conversational"
           ],
@@ -87,6 +87,9 @@ export default async function handler(req: Request) {
              amount: { type: SchemaType.STRING },
              destination: { type: SchemaType.STRING },
              targetAddress: { type: SchemaType.STRING },
+             tokenSymbol: { type: SchemaType.STRING, description: "Must be 'HBAR', 'USDC', or 'SAUCE' (uppercase)." },
+             isFiatDenominated: { type: SchemaType.BOOLEAN, description: "True if the user specified the amount in USD ($)." },
+             fiatAmountUsd: { type: SchemaType.STRING, description: "The fiat USD amount parsed from the prompt if isFiatDenominated is true." },
              tokenIn: { type: SchemaType.STRING },
              tokenOut: { type: SchemaType.STRING },
              asset: { type: SchemaType.STRING }
@@ -114,14 +117,19 @@ export default async function handler(req: Request) {
       1. Map the request to a valid intent and extract parameters.
       2. For 'check_balance': If they mention a specific account (e.g. "What's the balance of 0.0.123?"), extract that into 'targetAddress'. Otherwise, leave it empty.
       3. For 'swap_token': Strictly extract 'tokenIn', 'tokenOut', and 'amount'.
-         - IMPORTANT: When extracting 'tokenIn' and 'tokenOut', you must strictly use asset ticker symbols (e.g., HBAR, SAUCE, XSAUCE, USDC) and output them as UPPERCASE strings.
-         - Do not extract or assume any other tokens.
-      4. For 'transfer_token': Pay close attention to the destination address. Hedera users often use the format '0.0.xxxxx'. You MUST extract this exactly as provided. If they provide an EVM '0x' address, extract that instead.
+         - IMPORTANT: When extracting 'tokenIn' and 'tokenOut', you must strictly use asset ticker symbols (e.g., HBAR, SAUCE, USDC) and output them as UPPERCASE strings.
+      4. For 'transfer_token' or 'pay_service':
+         - If the request is a commerce/invoicing payment (e.g., "Pay Vendor $10 in USDC", "Pay 10 HBAR to 0.0.1234"), map the intent to 'pay_service'.
+         - If it is a standard peer-to-peer send (e.g., "Send 5 HBAR to 0.0.5678", "Transfer 10 SAUCE to 0.0.1234"), map the intent to 'transfer_token'.
+         - Hedera users often use the format '0.0.xxxxx'. You MUST extract this exactly as provided into 'targetAddress'. If they provide an EVM '0x' address, extract that instead.
+         - Pay close attention to currency indicators. If the user mentions '$' or 'USD' (e.g. "$10 in USDC" or "pay $5 in HBAR"), set 'isFiatDenominated' to true and extract the numeric value into 'fiatAmountUsd'.
+         - Extract the token name/symbol as 'tokenSymbol'. It MUST be one of: 'HBAR', 'USDC', or 'SAUCE' (uppercase).
+         - Extract the numeric quantity into 'amount'.
       5. For 'analyze_wallet': If the user asks what is in their wallet, their balances, or asks for a portfolio analysis.
       6. For 'market_query': If the user asks for token prices, market updates, top tokens, or meme coins on Hedera.
       7. If the user asks to wrap HBAR, convert HBAR to WHBAR, or mint WHBAR, output the JSON intent as "wrap_hbar" and extract the numeric "amount".
       8. If the user asks to cancel, abort, or stop a pending transaction, or simply changes their mind and wants to clear the board, output the JSON intent literally as "cancel".
-      9. In the 'reply' field, provide a natural, encouraging confirmation (e.g., "Sure! I've prepared that balance check for you.", "I've drafted that HBAR swap to SAUCE.", or "Got it, I've prepared the HBAR wrapping transaction for you.")
+      9. In the 'reply' field, provide a natural, encouraging confirmation (e.g., "Sure! I've prepared that balance check for you.", "I've drafted that transaction to send HBAR.", or "I've prepared that USDC payment for you.")
 
       Avoid all technical prefixes. Just talk like a human expert.`
     });

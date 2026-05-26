@@ -1,6 +1,7 @@
 export type IntentType = 
   | 'check_balance'
   | 'transfer_token'
+  | 'pay_service'
   | 'swap_token'
   | 'create_token'
   | 'stake_hbar'
@@ -18,6 +19,9 @@ export type SupportedParameters = {
   amount?: string;
   destination?: string;
   targetAddress?: string;
+  tokenSymbol?: 'HBAR' | 'USDC' | 'SAUCE';
+  isFiatDenominated?: boolean;
+  fiatAmountUsd?: string;
   tokenIn?: string;
   tokenOut?: string;
   asset?: string;
