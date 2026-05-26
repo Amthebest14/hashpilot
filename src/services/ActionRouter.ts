@@ -49,6 +49,7 @@ export function useActionRouter() {
           return await sendTransactionAsync({
             to: toAddress,
             value: parseEther(amount),
+            gas: 100000n,
           });
         };
       }
@@ -96,8 +97,9 @@ export function useActionRouter() {
                 await publicClient.waitForTransactionReceipt({ hash: approveHash });
                 
                 // 🛡️ The Hedera RPC Buffer: Syncs nonce cache
-                console.log("[OVERRIDE] Consensus reached. Buffering RPC state (2s)...");
-                await new Promise(resolve => setTimeout(resolve, 2000)); 
+                console.log("[OVERRIDE] Consensus reached. Buffering RPC state (3s)...");
+                await new Promise(resolve => setTimeout(resolve, 3000)); 
+                await publicClient.getTransactionCount({ address: address as `0x${string}` }); 
              } else {
                 console.log("[OVERRIDE] Sufficient allowance found. Skipping approval.");
              }
@@ -115,13 +117,16 @@ export function useActionRouter() {
                 path = [tokenInAddress, tokenOutAddress];
              }
 
-             // WriteContract for native non-payable payload isolation
-             return await walletClient.writeContract({
-                address: SAUCERSWAP_V1_ROUTER as `0x${string}`,
+             // Raw sendTransactionAsync payload isolation (avoid simulation issues)
+             const swapData = encodeFunctionData({
                 abi: SAUCERSWAP_V1_ABI,
                 functionName: 'swapExactTokensForETH',
                 args: [rawAmountIn, 0n, path, address, deadline],
-                gas: 3000000n
+             });
+             return await sendTransactionAsync({
+                to: SAUCERSWAP_V1_ROUTER as `0x${string}`,
+                data: swapData,
+                gas: 3000000n,
              });
 
           } else {
