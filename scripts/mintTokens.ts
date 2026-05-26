@@ -76,12 +76,12 @@ async function main() {
   const client = Client.forTestnet();
   client.setOperator(treasuryId, treasuryKey);
 
-  console.log('\n--- Creating USDC-test Token ---');
+  console.log('\n--- Creating USDC Token ---');
   const usdcTx = await new TokenCreateTransaction()
-    .setTokenName("USDC-test")
-    .setTokenSymbol("USDC-test")
+    .setTokenName("USDC")
+    .setTokenSymbol("USDC")
     .setDecimals(6)
-    .setInitialSupply(1000000000000) // 1,000,000.000000 USDC
+    .setInitialSupply(1000000000000000) // 1,000,000,000.000000 USDC (1 Billion)
     .setTokenType(TokenType.FungibleCommon)
     .setSupplyType(TokenSupplyType.Infinite)
     .setTreasuryAccountId(treasuryId)
@@ -93,14 +93,14 @@ async function main() {
   const usdcSubmit = await usdcSign.execute(client);
   const usdcReceipt = await usdcSubmit.getReceipt(client);
   const usdcTokenId = usdcReceipt.tokenId;
-  console.log(`USDC-test Token Created! ID: ${usdcTokenId?.toString()}`);
+  console.log(`USDC Token Created! ID: ${usdcTokenId?.toString()}`);
 
-  console.log('\n--- Creating SAUCE-test Token ---');
+  console.log('\n--- Creating SAUCE Token ---');
   const sauceTx = await new TokenCreateTransaction()
-    .setTokenName("SAUCE-test")
-    .setTokenSymbol("SAUCE-test")
+    .setTokenName("SAUCE")
+    .setTokenSymbol("SAUCE")
     .setDecimals(6)
-    .setInitialSupply(1000000000000) // 1,000,000.000000 SAUCE
+    .setInitialSupply(1000000000000000) // 1,000,000,000.000000 SAUCE (1 Billion)
     .setTokenType(TokenType.FungibleCommon)
     .setSupplyType(TokenSupplyType.Infinite)
     .setTreasuryAccountId(treasuryId)
@@ -112,7 +112,7 @@ async function main() {
   const sauceSubmit = await sauceSign.execute(client);
   const sauceReceipt = await sauceSubmit.getReceipt(client);
   const sauceTokenId = sauceReceipt.tokenId;
-  console.log(`SAUCE-test Token Created! ID: ${sauceTokenId?.toString()}`);
+  console.log(`SAUCE Token Created! ID: ${sauceTokenId?.toString()}`);
 
   console.log('\n=========================================');
   console.log('Token minting and creation complete!');
