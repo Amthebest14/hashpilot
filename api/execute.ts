@@ -132,8 +132,8 @@ export default async function handler(req: Request) {
     const tx = new TransferTransaction();
 
     if (tokenSymbol === 'HBAR') {
-      tx.addHbarTransfer(treasuryId, Hbar.from(-finalAmount));
-      tx.addHbarTransfer(AccountId.fromString(resolvedTarget), Hbar.from(finalAmount));
+      tx.addHbarTransfer(treasuryId, new Hbar(-finalAmount));
+      tx.addHbarTransfer(AccountId.fromString(resolvedTarget), new Hbar(finalAmount));
     } else {
       // HTS Token
       let tokenIdStr = '';
