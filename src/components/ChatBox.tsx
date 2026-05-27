@@ -5,6 +5,7 @@ import { queryAI } from '../services/aiService';
 import { useActionRouter } from '../services/ActionRouter';
 import type { ChatSession, ChatMessage } from './HistorySidebar';
 import TransactionCard from './TransactionCard';
+import WalletBalanceWidget from './WalletBalanceWidget';
 import { v4 as uuidv4 } from 'uuid';
 import { resolveHederaAddress, getHederaBalance } from '../services/hederaService';
 import { useAccount } from 'wagmi';
@@ -226,8 +227,11 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
         )}
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 bg-[#090A0F]/80 backdrop-blur-md pt-6 border-t border-[#222631]">
-        <ChatInput onSend={handleSend} disabled={isThinking} />
+      <div className="absolute bottom-0 left-0 right-0 bg-[#090A0F]/80 backdrop-blur-md border-t border-[#222631]">
+        <WalletBalanceWidget hederaId={hederaId} />
+        <div className="pt-6">
+          <ChatInput onSend={handleSend} disabled={isThinking} />
+        </div>
       </div>
     </div>
   );

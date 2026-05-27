@@ -5,6 +5,8 @@ import { useAccount } from 'wagmi';
 import { fetchOraclePrices } from '../services/oracle';
 import type { Prices } from '../services/oracle';
 import toast from 'react-hot-toast';
+import { useMockLedger } from '../hooks/useMockLedger';
+import type { SupportedToken } from '../hooks/useMockLedger';
 
 type TxStatus = 'idle' | 'pending' | 'success' | 'error';
 
@@ -35,6 +37,7 @@ export default function TransactionCard({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [prices, setPrices] = useState<Prices | null>(null);
   const { address } = useAccount();
+  const { balances, deductBalance, hasSufficientBalance } = useMockLedger(hederaId);
 
   useEffect(() => {
     fetchOraclePrices()
@@ -43,6 +46,15 @@ export default function TransactionCard({
   }, []);
 
   const handleExecute = async () => {
+    // --- PRE-CHECK: Mock ledger balance gate ---
+    const token = (tokenSymbol as SupportedToken) in balances ? tokenSymbol as SupportedToken : 'HBAR';
+    if (!hasSufficientBalance(token, displayAmount)) {
+      setStatus('error');
+      setErrorMsg(`Insufficient Hashpilot Balance. You have ${balances[token]} ${token} but this transaction requires ${displayAmount.toFixed(4)} ${token}.`);
+      onUpdateState('error');
+      return;
+    }
+
     setStatus('pending');
     setErrorMsg(null);
     onUpdateState('pending');
@@ -50,6 +62,10 @@ export default function TransactionCard({
       const result = await onExecute();
       const explorerUrl =
         result && typeof result === 'object' ? result.explorerUrl : result;
+
+      // --- POST-EXECUTION: Deduct from mock ledger on confirmed success ---
+      deductBalance(token, displayAmount);
+
       setHash(explorerUrl);
       setStatus('success');
       onUpdateState('success', explorerUrl);
