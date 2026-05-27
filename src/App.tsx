@@ -10,6 +10,7 @@ import { Toaster } from 'react-hot-toast';
 
 import { Menu, X } from 'lucide-react';
 import CustomWalletButton from './components/CustomWalletButton';
+import DashboardHeader from './components/DashboardHeader';
 
 function App() {
   const [showApp, setShowApp] = useState(false);
@@ -123,6 +124,9 @@ function App() {
               <CustomWalletButton />
            </div>
         </header>
+
+        {/* Dashboard Header - Global Persistence */}
+        <DashboardHeader hederaId={localHederaId} />
 
         <main className="flex-1 overflow-hidden flex flex-col">
           {activeTab === 'copilot' ? (
