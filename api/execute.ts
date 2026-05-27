@@ -173,8 +173,8 @@ export default async function handler(req: any, res: any) {
     console.log('[execute] Receipt status:', receipt.status.toString());
 
     const txIdStr = response.transactionId.toString();
-    // Convert "0.0.12345@1627384920.123456789" → "0-0-12345-1627384920-123456789"
-    const formattedTxId = txIdStr.replace('@', '-').replace(/\./g, '-');
+    // Convert "0.0.12345@1627384920.123456789" → "0.0.12345-1627384920-123456789"
+    const formattedTxId = txIdStr.replace('@', '-').replace(/\.(?=\d+$)/, '-');
     const explorerUrl = `https://hashscan.io/testnet/transaction/${formattedTxId}`;
 
     return res.status(200).json({
