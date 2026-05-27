@@ -84,12 +84,21 @@ export default async function handler(req: Request) {
           type: SchemaType.OBJECT,
           description: "An object containing the extracted variables for the intent.",
           properties: {
-             amount: { type: SchemaType.STRING },
+             amount: { 
+               type: SchemaType.STRING,
+               description: "The pure numeric quantity ONLY (e.g. '1', '5.5', '100'). Do NOT include the token symbol, address, or any other text. Just the number."
+             },
              destination: { type: SchemaType.STRING },
-             targetAddress: { type: SchemaType.STRING },
-             tokenSymbol: { type: SchemaType.STRING, description: "Must be 'HBAR', 'USDC', or 'SAUCE' (uppercase)." },
-             isFiatDenominated: { type: SchemaType.BOOLEAN, description: "True if the user specified the amount in USD ($)." },
-             fiatAmountUsd: { type: SchemaType.STRING, description: "The fiat USD amount parsed from the prompt if isFiatDenominated is true." },
+             targetAddress: { 
+               type: SchemaType.STRING,
+               description: "The Hedera account ID of the recipient in the format '0.0.XXXXX' (e.g. '0.0.7559699'). Extract EXACTLY as written. Do NOT put this in any other field."
+             },
+             tokenSymbol: { 
+               type: SchemaType.STRING, 
+               description: "The token to transfer. Must be exactly one of: 'HBAR', 'USDC', or 'SAUCE'. No other values allowed."
+             },
+             isFiatDenominated: { type: SchemaType.BOOLEAN, description: "True ONLY if the user specified the amount in USD ($). Default is false." },
+             fiatAmountUsd: { type: SchemaType.STRING, description: "The fiat USD amount if isFiatDenominated is true. Otherwise leave empty." },
              tokenIn: { type: SchemaType.STRING },
              tokenOut: { type: SchemaType.STRING },
              asset: { type: SchemaType.STRING }
@@ -141,6 +150,36 @@ export default async function handler(req: Request) {
     const result = await chat.sendMessage(latestUserMessage);
     const responseText = result.response.text();
     const jsonOutput = JSON.parse(responseText);
+
+    // --- POST-PROCESSING RESCUE ---
+    // Gemini sometimes misroutes the Hedera ID into the wrong field.
+    // We regex-scan the raw user message ourselves as the ground truth.
+    if (jsonOutput.parameters) {
+      const p = jsonOutput.parameters;
+
+      // 1. Rescue targetAddress: if empty, extract 0.0.XXXXX from the user's own message
+      if (!p.targetAddress || p.targetAddress.trim() === '') {
+        const hederaMatch = latestUserMessage.match(/\b(0\.0\.\d+)\b/);
+        if (hederaMatch) {
+          p.targetAddress = hederaMatch[1];
+        }
+      }
+
+      // 2. Rescue amount: strip any non-numeric characters (keep only digits and one dot)
+      if (p.amount) {
+        const numMatch = String(p.amount).match(/^[\d]*\.?[\d]+/);
+        p.amount = numMatch ? numMatch[0] : '0';
+      }
+
+      // 3. Rescue tokenSymbol: force to uppercase, strip non-alpha, validate against known tokens
+      if (p.tokenSymbol) {
+        const cleaned = String(p.tokenSymbol).toUpperCase().replace(/[^A-Z]/g, '');
+        const knownTokens = ['HBAR', 'USDC', 'SAUCE'];
+        // If cleaned starts with a known token symbol, use it
+        const matched = knownTokens.find(t => cleaned.startsWith(t));
+        p.tokenSymbol = matched || 'HBAR';
+      }
+    }
 
     return new Response(JSON.stringify(jsonOutput), {
       status: 200,
