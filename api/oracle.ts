@@ -1,6 +1,6 @@
-export default async function handler(req: Request) {
+export default async function handler(req: any, res: any) {
   if (req.method !== 'GET' && req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
@@ -58,18 +58,10 @@ export default async function handler(req: Request) {
       SAUCE: saucePrice
     };
 
-    return new Response(JSON.stringify({ prices, timestamp: Date.now() }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=10'
-      }
-    });
+    res.setHeader('Cache-Control', 'public, max-age=10');
+    return res.status(200).json({ prices, timestamp: Date.now() });
 
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message || String(error) }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: error.message || String(error) });
   }
 }
