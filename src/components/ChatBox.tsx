@@ -151,35 +151,17 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
               aiMessages.push({ id: uuidv4(), role: 'ai', content: "I'm having trouble fetching live market intel right now. SaucerSwap signals are currently faint!" });
             }
         } else {
-          // It's a transaction intent (swap, transfer, etc.)
-          const resolvedAddress = (params.targetAddress || params.destination || '').trim();
-
-          if (!resolvedAddress) {
-            // No address at all — ask the user conversationally
-            aiMessages.push({
-              id: uuidv4(),
-              role: 'ai',
-              content: response.reply || "I've understood the request, but I need a destination address. Please provide the recipient's Hedera account ID (e.g. `0.0.12345`) to continue."
-            });
-          } else {
-            // Address exists — render the card with sanitized params
-            const cleanParams = {
-              ...params,
-              targetAddress: resolvedAddress,
-              tokenSymbol: (params.tokenSymbol || 'HBAR').toUpperCase().replace(/[^A-Z]/g, '')
-            };
-
-            aiMessages.push({
-              id: uuidv4(),
-              role: 'ai',
-              content: '',
-              isTransaction: true,
-              intent: intent,
-              parameters: cleanParams,
-              txStatus: 'idle',
-              txHash: null
-            });
-          }
+          // It's a transaction intent (swap, transfer, etc)
+          aiMessages.push({
+            id: uuidv4(),
+            role: 'ai',
+            content: '', // Empty content as the card will be the main UI
+            isTransaction: true,
+            intent: intent,
+            parameters: params,
+            txStatus: 'idle',
+            txHash: null
+          });
         }
       }
       

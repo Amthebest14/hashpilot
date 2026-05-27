@@ -76,8 +76,8 @@ export default function TransactionCard({
   const isEffectivelyExpired = isExpired && status !== 'success';
 
   // Safely extract and sanitize parameters (hardened against JSON bleed)
-  const tokenSymbol = (parameters.tokenSymbol || 'HBAR').toUpperCase().replace(/[^A-Z]/g, '');
-  const recipient = (parameters.targetAddress || parameters.destination || '').trim();
+  const tokenSymbol = (parameters.tokenSymbol || 'HBAR').toUpperCase();
+  const recipient = parameters.targetAddress || parameters.destination || '';
   const isFiat = !!parameters.isFiatDenominated;
   const fiatUsd = parameters.fiatAmountUsd ? parseFloat(parameters.fiatAmountUsd) : 0;
   const rawAmount = parameters.amount ? parseFloat(parameters.amount) : 0;
