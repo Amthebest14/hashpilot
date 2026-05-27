@@ -95,7 +95,13 @@ export default function TransactionCard({
   const tokenSymbol = (parameters.tokenSymbol || 'HBAR').toUpperCase();
   const recipient = parameters.targetAddress || parameters.destination || '';
   const isFiat = !!parameters.isFiatDenominated;
-  const rawAmount = parameters.amount ? parseFloat(parameters.amount) : 0;
+  
+  // The AI sometimes puts the fiat value in fiatAmountUsd and leaves amount empty.
+  // We must pull from fiatAmountUsd if it's a fiat transaction.
+  const fiatUsd = parameters.fiatAmountUsd ? parseFloat(parameters.fiatAmountUsd) : 0;
+  const rawAmount = isFiat 
+    ? (fiatUsd || (parameters.amount ? parseFloat(parameters.amount) : 0))
+    : (parameters.amount ? parseFloat(parameters.amount) : 0);
 
   // 1. Fix the Fiat vs. Token Math Routing
   let displayTokenAmount = isFiat ? 0 : rawAmount;
