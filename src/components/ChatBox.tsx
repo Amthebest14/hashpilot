@@ -152,21 +152,17 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
             }
         } else {
           // It's a transaction intent (swap, transfer, etc.)
-          // --- GUARD: Ensure targetAddress is a clean, valid string ---
           const resolvedAddress = (params.targetAddress || params.destination || '').trim();
 
-          // Strictly validate: must look like a Hedera ID (0.0.xxxxx) or EVM (0x...)
-          const isValidAddress = /^(0\.\d+\.\d+|0x[a-fA-F0-9]{40})$/.test(resolvedAddress);
-
-          if (!isValidAddress) {
-            // Don't render card — ask the user for the destination instead
+          if (!resolvedAddress) {
+            // No address at all — ask the user conversationally
             aiMessages.push({
               id: uuidv4(),
               role: 'ai',
               content: response.reply || "I've understood the request, but I need a destination address. Please provide the recipient's Hedera account ID (e.g. `0.0.12345`) to continue."
             });
           } else {
-            // Clean up parameters — inject validated address back in
+            // Address exists — render the card with sanitized params
             const cleanParams = {
               ...params,
               targetAddress: resolvedAddress,
@@ -176,7 +172,7 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
             aiMessages.push({
               id: uuidv4(),
               role: 'ai',
-              content: '', // Card is the main UI
+              content: '',
               isTransaction: true,
               intent: intent,
               parameters: cleanParams,
