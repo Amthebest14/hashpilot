@@ -7,6 +7,8 @@ import {
   TokenId,
 } from '@hashgraph/sdk';
 
+export const maxDuration = 60; // Allow Vercel function to run for up to 60s for LLM processing
+
 // Fetch with a hard timeout to prevent oracle calls from hanging
 async function fetchWithTimeout(url: string, timeoutMs = 8000): Promise<Response> {
   const controller = new AbortController();

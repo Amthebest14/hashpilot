@@ -56,6 +56,6 @@ export async function executeTreasuryTransaction(payload: TreasuryPayload): Prom
     return data as TreasuryResult;
   });
 
-  // 35 second hard deadline — Hedera testnet is slow but not *this* slow
-  return withTimeout(fetchPromise, 35000, 'Treasury execution');
+  // 60 second hard deadline — Hedera network + LLM Generation takes time
+  return withTimeout(fetchPromise, 60000, 'Treasury execution');
 }
