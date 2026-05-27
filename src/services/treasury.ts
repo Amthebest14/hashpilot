@@ -1,10 +1,14 @@
 export interface TreasuryPayload {
   intent: string;
+  intentType?: string;
   tokenSymbol: 'HBAR' | 'USDC' | 'SAUCE';
   amount: string;
-  targetAddress: string;
-  isFiatDenominated: boolean;
+  targetAddress?: string;
+  isFiatDenominated?: boolean;
   fiatAmountUsd?: string;
+  actionName?: string;
+  asset?: string;
+  codeSnippet?: string;
 }
 
 export interface TreasuryResult {
@@ -16,6 +20,7 @@ export interface TreasuryResult {
   tokenSymbol: string;
   recipient: string;
   error?: string;
+  toolOutput?: string;
 }
 
 // Hard client-side timeout — if the backend doesn't respond in 35s, reject cleanly

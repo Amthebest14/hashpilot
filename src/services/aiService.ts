@@ -1,5 +1,7 @@
 export type IntentType = 
   | 'check_balance'
+  | 'p2p_transfer'
+  | 'premium_unlock'
   | 'transfer_token'
   | 'pay_service'
   | 'swap_token'
@@ -25,6 +27,7 @@ export type SupportedParameters = {
   tokenIn?: string;
   tokenOut?: string;
   asset?: string;
+  actionName?: string;
   [key: string]: any;
 };
 

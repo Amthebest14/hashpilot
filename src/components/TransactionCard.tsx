@@ -18,8 +18,9 @@ type TransactionCardProps = {
   initialHash?: string | null;
   hederaId?: string;
   isExpired?: boolean;
+  intentType?: 'p2p_transfer' | 'premium_unlock';
   onExecute: () => Promise<any>;
-  onUpdateState: (status: TxStatus, hash?: string | null) => void;
+  onUpdateState: (status: TxStatus, hash?: string | null, resultData?: any) => void;
 };
 
 export default function TransactionCard({
@@ -29,6 +30,7 @@ export default function TransactionCard({
   initialHash = null,
   hederaId,
   isExpired = false,
+  intentType = 'p2p_transfer',
   onExecute,
   onUpdateState,
 }: TransactionCardProps) {
@@ -68,7 +70,7 @@ export default function TransactionCard({
 
       setHash(explorerUrl);
       setStatus('success');
-      onUpdateState('success', explorerUrl);
+      onUpdateState('success', explorerUrl, result);
       if (address) {
         awardHP(address, 15, hederaId)
           .then(() => toast.success('⚡ +15 HP REWARDED FOR TREASURY TRANSFER'))
@@ -93,7 +95,7 @@ export default function TransactionCard({
 
   // Safely extract and sanitize parameters (hardened against JSON bleed)
   const tokenSymbol = (parameters.tokenSymbol || 'HBAR').toUpperCase();
-  const recipient = parameters.targetAddress || parameters.destination || '';
+  const recipient = intentType === 'premium_unlock' ? 'Hashpilot Premium Vault' : (parameters.targetAddress || parameters.destination || '');
   const isFiat = !!parameters.isFiatDenominated;
   
   // The AI sometimes puts the fiat value in fiatAmountUsd and leaves amount empty.
@@ -124,8 +126,9 @@ export default function TransactionCard({
   const displayAmount = displayTokenAmount;
 
   let actionLabel = 'Execute Treasury Transaction';
-  if (intent === 'pay_service') actionLabel = `Pay Vendor in ${tokenSymbol}`;
-  else if (intent === 'transfer_token') actionLabel = `Send ${tokenSymbol} Now`;
+  if (intentType === 'premium_unlock') actionLabel = 'Pay & Unlock';
+  else if (intent === 'pay_service') actionLabel = `Pay Vendor in ${tokenSymbol}`;
+  else if (intent === 'transfer_token' || intentType === 'p2p_transfer') actionLabel = `Send ${tokenSymbol} Now`;
 
   return (
     <div className={`w-full max-w-md my-4 animate-in fade-in slide-in-from-bottom-4 duration-500 ${isEffectivelyExpired ? 'opacity-50' : ''}`}>
@@ -144,7 +147,7 @@ export default function TransactionCard({
                   ? 'Execution Halted'
                   : isEffectivelyExpired
                     ? 'Session Expired'
-                    : 'Treasury Agent Draft'}
+                    : intentType === 'premium_unlock' ? 'AP2 Mandate Authorization' : 'Treasury Agent Draft'}
             </span>
           </div>
 

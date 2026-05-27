@@ -91,6 +91,7 @@ export default async function handler(req: any, res: any) {
   // --- ENV GUARD: fail fast before any async work ---
   const treasuryIdStr = process.env.TREASURY_ACCOUNT_ID;
   const treasuryKeyStr = process.env.TREASURY_PRIVATE_KEY;
+  const revenueIdStr = process.env.REVENUE_ACCOUNT_ID || '0.0.12345'; // Fallback if not set
 
   if (!treasuryIdStr || !treasuryKeyStr) {
     console.error('[execute] CRITICAL: Treasury env vars not set.');
@@ -100,11 +101,18 @@ export default async function handler(req: any, res: any) {
   let client: Client | null = null;
 
   try {
-    const { intent, tokenSymbol, amount, targetAddress, isFiatDenominated, fiatAmountUsd } = req.body;
+    const { intent, intentType, tokenSymbol, amount, targetAddress, isFiatDenominated, fiatAmountUsd, actionName, asset, codeSnippet } = req.body;
 
     // --- INPUT VALIDATION ---
-    if (!intent || !tokenSymbol || !targetAddress) {
-      return res.status(400).json({ error: 'Missing required parameters: intent, tokenSymbol, targetAddress' });
+    if (!tokenSymbol) {
+      return res.status(400).json({ error: 'Missing required parameters: tokenSymbol' });
+    }
+    
+    // Determine the actual recipient based on intentType
+    const finalTargetAddress = intentType === 'premium_unlock' ? revenueIdStr : targetAddress;
+    
+    if (!finalTargetAddress) {
+      return res.status(400).json({ error: 'Missing required parameters: targetAddress' });
     }
 
     const cleanSymbol = String(tokenSymbol).toUpperCase().replace(/[^A-Z]/g, '');
@@ -131,7 +139,7 @@ export default async function handler(req: any, res: any) {
     }
 
     // --- RESOLVE TARGET ADDRESS ---
-    const resolvedTarget = await resolveAccount(targetAddress);
+    const resolvedTarget = await resolveAccount(finalTargetAddress);
 
     // --- INIT HEDERA CLIENT ---
     const treasuryId = AccountId.fromString(treasuryIdStr);
@@ -177,6 +185,36 @@ export default async function handler(req: any, res: any) {
     const formattedTxId = txIdStr.replace('@', '-').replace(/\.(?=\d+$)/, '-');
     const explorerUrl = `https://hashscan.io/testnet/transaction/${formattedTxId}`;
 
+    // --- POST-PAYMENT TOOL EXECUTION (ATOMIC) ---
+    let toolOutput = undefined;
+    
+    if (intentType === 'premium_unlock') {
+      if (actionName === 'market_intelligence') {
+        const queryAsset = asset || 'bitcoin';
+        try {
+          const cgRes = await fetchWithTimeout(`https://api.coingecko.com/api/v3/simple/price?ids=${queryAsset}&vs_currencies=usd&include_24hr_change=true`, 5000);
+          if (cgRes.ok) {
+            const data = await cgRes.json();
+            toolOutput = `📈 **Premium Market Intelligence: ${queryAsset.toUpperCase()}**\n\n` + JSON.stringify(data, null, 2);
+          } else {
+            toolOutput = `Premium intel fetch failed. Status: ${cgRes.status}`;
+          }
+        } catch (e) {
+          toolOutput = `Premium intel fetch timed out.`;
+        }
+      } else if (actionName === 'contract_audit') {
+        try {
+          const { GoogleGenerativeAI } = await import('@google/generative-ai');
+          const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+          const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+          const auditRes = await model.generateContent(`Audit this solidity code for vulnerabilities. Be concise and professional:\n\n${codeSnippet || "No code provided."}`);
+          toolOutput = `🛡️ **Premium Contract Audit**\n\n${auditRes.response.text()}`;
+        } catch (e) {
+          toolOutput = `Audit failed. ${String(e)}`;
+        }
+      }
+    }
+
     return res.status(200).json({
         status: 'SUCCESS',
         transactionId: txIdStr,
@@ -185,6 +223,7 @@ export default async function handler(req: any, res: any) {
         fiatValueUsd: calculatedFiat.toFixed(2),
         tokenSymbol: cleanSymbol,
         recipient: resolvedTarget,
+        toolOutput
       });
 
   } catch (error: any) {

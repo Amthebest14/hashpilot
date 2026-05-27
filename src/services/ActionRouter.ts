@@ -14,16 +14,17 @@ export function useActionRouter() {
     }
 
     switch (intent) {
+      case 'premium_unlock':
       case 'pay_service':
       case 'transfer_token': {
         return async () => {
           // Extract variables mapped by api/intent.ts
-          const { amount, targetAddress, tokenSymbol, isFiatDenominated, fiatAmountUsd } = parameters;
+          const { amount, targetAddress, tokenSymbol, isFiatDenominated, fiatAmountUsd, actionName, asset, codeSnippet } = parameters;
           
           const recipient = targetAddress || parameters.destination;
           const symbol = (tokenSymbol || 'HBAR').toUpperCase() as 'HBAR' | 'USDC' | 'SAUCE';
 
-          if (!recipient) {
+          if (!recipient && intent !== 'premium_unlock') {
             throw new Error('No destination address found. Please retry and include the recipient\'s Hedera account ID (e.g. "send 1 HBAR to 0.0.12345").');
           }
 
@@ -39,11 +40,15 @@ export function useActionRouter() {
 
           const payload: TreasuryPayload = {
             intent,
+            intentType: intent === 'premium_unlock' ? 'premium_unlock' : 'p2p_transfer',
             tokenSymbol: symbol,
             amount: amount || '0',
             targetAddress: recipient,
             isFiatDenominated: !!isFiatDenominated,
-            fiatAmountUsd: fiatAmountUsd || undefined
+            fiatAmountUsd: fiatAmountUsd || undefined,
+            actionName,
+            asset,
+            codeSnippet
           };
 
           console.log('[ActionRouter] Routing request to server-side treasury:', payload);

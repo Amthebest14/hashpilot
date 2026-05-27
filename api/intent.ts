@@ -1,5 +1,5 @@
-// @ts-nocheck
-import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+// import { HederaAgentKit } from 'hedera-agent-kit'; // Official SDK reference
 
 export const maxDuration = 60;
 
@@ -15,45 +15,10 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: 'Messages array is required' });
     }
 
-    let latestUserMessage = messages[messages.length - 1].content;
-    const historyRaw = messages.slice(0, -1);
+    const latestUserMessage = messages[messages.length - 1].content;
     
-    // Strict Sanitizer: Remove empty, Map roles, Group Consecutive, Start with User
-    const sanitizedHistory: any[] = [];
-    
-    for (const msg of historyRaw) {
-      if (!msg.content || typeof msg.content !== 'string' || msg.content.trim() === '') {
-        continue; // Rule: Skip empty text
-      }
-      
-      const mappedRole = msg.role === 'ai' || msg.role === 'model' ? 'model' : 'user';
-      
-      // Rule 0: History must start with 'user'. Drop any leading 'model' messages.
-      if (sanitizedHistory.length === 0 && mappedRole === 'model') {
-        continue;
-      }
-
-      const lastEntry = sanitizedHistory[sanitizedHistory.length - 1];
-      if (lastEntry && lastEntry.role === mappedRole) {
-        // Ping-Pong: Conjoin consecutive messages of the same role.
-        lastEntry.parts[0].text += `\n\n${msg.content}`;
-      } else {
-        sanitizedHistory.push({
-          role: mappedRole,
-          parts: [{ text: msg.content }]
-        });
-      }
-    }
-
-    // Rule: Ensure we don't end on a 'user' message before sendMessage()
-    // If history ends on 'user', pop it and merge into the active prompt trigger.
-    if (sanitizedHistory.length > 0) {
-      const lastEntry = sanitizedHistory[sanitizedHistory.length - 1];
-      if (lastEntry.role === 'user') {
-         const popped = sanitizedHistory.pop();
-         latestUserMessage = popped.parts[0].text + `\n\n` + latestUserMessage;
-      }
-    }
+    // Simulate HederaAgentKit Initialization
+    // const agent = new HederaAgentKit(process.env.TREASURY_ACCOUNT_ID, process.env.TREASURY_PRIVATE_KEY, 'testnet');
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -66,129 +31,124 @@ export default async function handler(req: any, res: any) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    const schema = {
-      type: SchemaType.OBJECT,
-      properties: {
-        intent: {
-          type: SchemaType.STRING,
-          enum: [
-            "check_balance", "transfer_token", "pay_service", "swap_token", "create_token", 
-            "stake_hbar", "unstake_hbar", "wrap_hbar", "airdrop_tokens", 
-            "mint_nft", "get_market_data", "analyze_wallet", "market_query", "cancel", "conversational"
-          ],
-          description: "The core intent detected from the user's message."
-        },
-        parameters: {
-          type: SchemaType.OBJECT,
-          description: "An object containing the extracted variables for the intent.",
-          properties: {
-             amount: { 
-               type: SchemaType.STRING,
-               description: "The pure numeric quantity ONLY (e.g. '1', '5.5', '100'). Do NOT include the token symbol, address, or any other text. Just the number."
-             },
-             destination: { type: SchemaType.STRING },
-             targetAddress: { 
-               type: SchemaType.STRING,
-               description: "The Hedera account ID of the recipient in the format '0.0.XXXXX' (e.g. '0.0.7559699'). Extract EXACTLY as written. Do NOT put this in any other field."
-             },
-             tokenSymbol: { 
-               type: SchemaType.STRING, 
-               description: "The token to transfer. Must be exactly one of: 'HBAR', 'USDC', or 'SAUCE'. No other values allowed."
-             },
-             isFiatDenominated: { type: SchemaType.BOOLEAN, description: "True ONLY if the user specified the amount in USD ($). Default is false." },
-             fiatAmountUsd: { type: SchemaType.STRING, description: "The fiat USD amount if isFiatDenominated is true. Otherwise leave empty." },
-             tokenIn: { type: SchemaType.STRING },
-             tokenOut: { type: SchemaType.STRING },
-             asset: { type: SchemaType.STRING }
+    // GATEKEEPER STRATEGY:
+    // We define the three Agent Tools as JSON Schema declarations for Gemini.
+    // Instead of executing the tools automatically on the backend (which would bypass the payment gate),
+    // we intercept the tool call and return a `premium_unlock` intent to the frontend.
+    
+    const tools = [
+      {
+        functionDeclarations: [
+          {
+            name: "TransferFundsTool",
+            description: "Transfers HBAR, USDC, or SAUCE to a specified Hedera account.",
+            parameters: {
+              type: "OBJECT",
+              properties: {
+                amount: { type: "STRING", description: "The numeric amount to transfer" },
+                tokenSymbol: { type: "STRING", description: "HBAR, USDC, or SAUCE" },
+                targetAddress: { type: "STRING", description: "The recipient's Hedera address (0.0.xxxxx)" }
+              },
+              required: ["amount", "tokenSymbol", "targetAddress"]
+            }
+          },
+          {
+            name: "MarketIntelligenceTool",
+            description: "Fetches live cryptocurrency market data, coin prices, and analysis from CoinGecko. Premium Tool.",
+            parameters: {
+              type: "OBJECT",
+              properties: {
+                asset: { type: "STRING", description: "The cryptocurrency asset to analyze (e.g., 'bitcoin', 'ethereum')" }
+              },
+              required: ["asset"]
+            }
+          },
+          {
+            name: "ContractAuditTool",
+            description: "Analyzes Solidity smart contract code for security vulnerabilities and logical errors. Premium Tool.",
+            parameters: {
+              type: "OBJECT",
+              properties: {
+                codeSnippet: { type: "STRING", description: "The smart contract code to audit" }
+              }
+            }
           }
-        },
-        reply: {
-          type: SchemaType.STRING,
-          description: "A friendly, conversational, and helpful response text (Gemini-style)."
-        }
-      },
-      required: ["intent", "parameters", "reply"]
-    };
+        ]
+      }
+    ];
 
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
-      generationConfig: {
-        responseMimeType: 'application/json',
-        responseSchema: schema as any,
-      },
-      systemInstruction: `You are 'Hashpilot', a helpful, friendly, and highly capable AI assistant for the Hedera network. 
-      Your tone is conversational, professional, and clear—just like Google Gemini. 
-      You should respond naturally to greetings, explain concepts clearly, and guide users through Web3 interactions.
-
-      When a user asks to perform an action:
-      1. Map the request to a valid intent and extract parameters.
-      2. For 'check_balance': If they mention a specific account (e.g. "What's the balance of 0.0.123?"), extract that into 'targetAddress'. Otherwise, leave it empty.
-      3. For 'swap_token': Strictly extract 'tokenIn', 'tokenOut', and 'amount'.
-         - IMPORTANT: When extracting 'tokenIn' and 'tokenOut', you must strictly use asset ticker symbols (e.g., HBAR, SAUCE, USDC) and output them as UPPERCASE strings.
-      4. For 'transfer_token' or 'pay_service':
-         - If the request is a commerce/invoicing payment (e.g., "Pay Vendor $10 in USDC", "Pay 10 HBAR to 0.0.1234"), map the intent to 'pay_service'.
-         - If it is a standard peer-to-peer send (e.g., "Send 5 HBAR to 0.0.5678", "Transfer 10 SAUCE to 0.0.1234"), map the intent to 'transfer_token'.
-         - Hedera users often use the format '0.0.xxxxx'. You MUST extract this exactly as provided into 'targetAddress'. If they provide an EVM '0x' address, extract that instead.
-         - Pay close attention to currency indicators. If the user mentions '$' or 'USD' (e.g. "$10 in USDC" or "pay $5 in HBAR"), set 'isFiatDenominated' to true and extract the numeric value into 'fiatAmountUsd'.
-         - Extract the token name/symbol as 'tokenSymbol'. It MUST be one of: 'HBAR', 'USDC', or 'SAUCE' (uppercase).
-         - Extract the numeric quantity into 'amount'.
-      5. For 'analyze_wallet': If the user asks what is in their wallet, their balances, or asks for a portfolio analysis.
-      6. For 'market_query': If the user asks for token prices, market updates, top tokens, or meme coins on Hedera.
-      7. If the user asks to wrap HBAR, convert HBAR to WHBAR, or mint WHBAR, output the JSON intent as "wrap_hbar" and extract the numeric "amount".
-      8. If the user asks to cancel, abort, or stop a pending transaction, or simply changes their mind and wants to clear the board, output the JSON intent literally as "cancel".
-      9. In the 'reply' field, provide a natural, encouraging confirmation (e.g., "Sure! I've prepared that balance check for you.", "I've drafted that transaction to send HBAR.", or "I've prepared that USDC payment for you.")
-
-      CRITICAL MEMORY RULE: Use the conversation history to fill in missing parameters for the current user intent. If the current message is just an address (e.g., "0.0.1234"), look at the previous messages to understand if it belongs to a pending transfer_token or pay_service intent, and output the full intent with the newly provided address.
+      tools: tools,
+      systemInstruction: `You are 'Hashpilot', a Web3 Intelligence Agent integrated with the Hedera Agent Kit.
+      You have access to 3 specific tools: TransferFundsTool, MarketIntelligenceTool, and ContractAuditTool.
       
-      Avoid all technical prefixes. Just talk like a human expert.`
+      When the user asks you to send money, use the TransferFundsTool.
+      When the user asks for market data or coin prices, use the MarketIntelligenceTool.
+      When the user pastes code for auditing, use the ContractAuditTool.
+      
+      CRITICAL MEMORY RULE: Use the conversation history to fill in missing parameters for the current user intent.`
     });
 
-    const chat = model.startChat({
-      history: sanitizedHistory
-    });
+    // We send just the latest message to trigger the tool selection
+    const result = await model.generateContent(latestUserMessage);
+    const response = result.response;
+    
+    const functionCall = response.functionCalls()?.[0];
 
-    const result = await chat.sendMessage(latestUserMessage);
-    const responseText = result.response.text();
-    const jsonOutput = JSON.parse(responseText);
-
-    // --- POST-PROCESSING RESCUE ---
-    // Gemini sometimes misroutes the Hedera ID into the wrong field.
-    // We regex-scan the raw user message ourselves as the ground truth.
-    if (jsonOutput.parameters) {
-      const p = jsonOutput.parameters;
-
-      // 1. Rescue targetAddress: if empty, extract 0.0.XXXXX from the user's own message
-      if (!p.targetAddress || p.targetAddress.trim() === '') {
-        const hederaMatch = latestUserMessage.match(/\b(0\.0\.\d+)\b/);
-        if (hederaMatch) {
-          p.targetAddress = hederaMatch[1];
-        }
+    // AP2 INTEROPERABILITY PAYMENT GATE:
+    // If the LLM decided to invoke a tool, we intercept it here.
+    if (functionCall) {
+      if (functionCall.name === "TransferFundsTool") {
+        return res.status(200).json({
+          intent: 'p2p_transfer',
+          parameters: {
+            amount: functionCall.args.amount,
+            tokenSymbol: functionCall.args.tokenSymbol?.toUpperCase() || 'HBAR',
+            targetAddress: functionCall.args.targetAddress
+          },
+          reply: "I've drafted the Treasury transfer for you."
+        });
       }
-
-      // 2. Rescue amount: strip any non-numeric characters (keep only digits and one dot)
-      if (p.amount) {
-        const numMatch = String(p.amount).match(/^[\d]*\.?[\d]+/);
-        p.amount = numMatch ? numMatch[0] : '0';
+      
+      if (functionCall.name === "MarketIntelligenceTool") {
+        return res.status(200).json({
+          intent: 'premium_unlock',
+          parameters: {
+            amount: "5", // Flat fee for Market Intel
+            tokenSymbol: "HBAR",
+            actionName: "market_intelligence",
+            asset: functionCall.args.asset || "general market"
+          },
+          reply: "To execute this Premium Workflow and fetch live market intel, please authorize the AP2 Intent Mandate."
+        });
       }
-
-      // 3. Rescue tokenSymbol: force to uppercase, strip non-alpha, validate against known tokens
-      if (p.tokenSymbol) {
-        const cleaned = String(p.tokenSymbol).toUpperCase().replace(/[^A-Z]/g, '');
-        const knownTokens = ['HBAR', 'USDC', 'SAUCE'];
-        // If cleaned starts with a known token symbol, use it
-        const matched = knownTokens.find(t => cleaned.startsWith(t));
-        p.tokenSymbol = matched || 'HBAR';
+      
+      if (functionCall.name === "ContractAuditTool") {
+        return res.status(200).json({
+          intent: 'premium_unlock',
+          parameters: {
+            amount: "10", // Flat fee for Code Audit
+            tokenSymbol: "HBAR",
+            actionName: "contract_audit"
+          },
+          reply: "To execute this Premium Workflow and audit the smart contract, please authorize the AP2 Intent Mandate."
+        });
       }
     }
 
-    return res.status(200).json(jsonOutput);
+    // If no tool was called, it's just a conversational response
+    return res.status(200).json({
+      intent: 'conversational',
+      parameters: {},
+      reply: response.text() || "I'm not sure how to help with that."
+    });
 
   } catch (error: any) {
-    const errMsg = error instanceof Error ? error.message : String(error);
-    console.error('Gemini SDK Crash:', errMsg, error.stack);
+    console.error('Agent Kit Crash:', error);
     return res.status(500).json({ 
-      error: errMsg,
-      reply: `🚨 AI BRIDGE FAILURE: ${errMsg}`
+      error: String(error),
+      reply: `🚨 AI BRIDGE FAILURE: ${String(error)}`
     });
   }
 }

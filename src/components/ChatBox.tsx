@@ -21,10 +21,19 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
   const { getExecutableFunction } = useActionRouter();
   const { address } = useAccount();
 
-  const onUpdateTxState = (msgId: string, status: 'idle' | 'pending' | 'success' | 'error', hash?: string | null) => {
+  const onUpdateTxState = (msgId: string, status: 'idle' | 'pending' | 'success' | 'error', hash?: string | null, resultData?: any) => {
     const updatedMessages = session.messages.map(m => 
       m.id === msgId ? { ...m, txStatus: status, txHash: hash } : m
     );
+
+    if (status === 'success' && resultData?.toolOutput) {
+      updatedMessages.push({
+        id: uuidv4(),
+        role: 'ai',
+        content: resultData.toolOutput
+      });
+    }
+
     onUpdateSession(updatedMessages);
   };
 
@@ -196,18 +205,19 @@ export default function ChatBox({ session, onUpdateSession, hederaId }: ChatBoxP
               <ChatMessageComponent role={msg.role} content={msg.content} />
             )}
             
-            {msg.isTransaction && (
+            {msg.isTransaction && msg.intent && (
               <div className="flex justify-start mb-4 md:mb-8 ml-2 md:ml-8 mr-2 md:mr-0 max-w-full overflow-hidden">
                 <TransactionCard 
                   msgId={msg.id}
-                  intent={msg.intent!}
+                  intent={msg.intent}
+                  intentType={msg.intent === 'premium_unlock' ? 'premium_unlock' : 'p2p_transfer'}
                   parameters={msg.parameters}
                   initialStatus={msg.txStatus as any || 'idle'}
                   initialHash={msg.txHash}
                   hederaId={hederaId}
                   isExpired={isExpired}
                   onExecute={getExecutableFunction(msg.intent!, msg.parameters)!}
-                  onUpdateState={(status, hash) => onUpdateTxState(msg.id, status, hash)}
+                  onUpdateState={(status, hash, resultData) => onUpdateTxState(msg.id, status, hash, resultData)}
                 />
               </div>
             )}
