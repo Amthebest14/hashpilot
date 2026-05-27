@@ -3,16 +3,16 @@ import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 
 export const maxDuration = 60;
 
-export default async function handler(req: Request) {
+export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { messages } = await req.json();
+    const { messages } = req.body;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return new Response(JSON.stringify({ error: 'Messages array is required' }), { status: 400 });
+      return res.status(400).json({ error: 'Messages array is required' });
     }
 
     let latestUserMessage = messages[messages.length - 1].content;
@@ -57,11 +57,11 @@ export default async function handler(req: Request) {
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return new Response(JSON.stringify({ 
+      return res.status(200).json({ 
         intent: 'conversational',
         parameters: {},
         reply: "My API key isn't configured yet. Please set the GEMINI_API_KEY environment variable."
-      }), { status: 200 });
+      });
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -179,20 +179,14 @@ export default async function handler(req: Request) {
       }
     }
 
-    return new Response(JSON.stringify(jsonOutput), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(200).json(jsonOutput);
 
   } catch (error: any) {
     const errMsg = error instanceof Error ? error.message : String(error);
     console.error('Gemini SDK Crash:', errMsg, error.stack);
-    return new Response(JSON.stringify({ 
+    return res.status(500).json({ 
       error: errMsg,
       reply: `🚨 AI BRIDGE FAILURE: ${errMsg}`
-    }), { 
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
     });
   }
 }

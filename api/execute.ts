@@ -83,9 +83,9 @@ async function resolveAccount(address: string): Promise<string> {
   return cleanAddress;
 }
 
-export default async function handler(req: Request) {
+export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   // --- ENV GUARD: fail fast before any async work ---
@@ -94,32 +94,22 @@ export default async function handler(req: Request) {
 
   if (!treasuryIdStr || !treasuryKeyStr) {
     console.error('[execute] CRITICAL: Treasury env vars not set.');
-    return new Response(
-      JSON.stringify({ error: 'Server misconfiguration: Treasury credentials missing. Contact support.' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return res.status(500).json({ error: 'Server misconfiguration: Treasury credentials missing. Contact support.' });
   }
 
   let client: Client | null = null;
 
   try {
-    const { intent, tokenSymbol, amount, targetAddress, isFiatDenominated, fiatAmountUsd } =
-      await req.json();
+    const { intent, tokenSymbol, amount, targetAddress, isFiatDenominated, fiatAmountUsd } = req.body;
 
     // --- INPUT VALIDATION ---
     if (!intent || !tokenSymbol || !targetAddress) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required parameters: intent, tokenSymbol, targetAddress' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return res.status(400).json({ error: 'Missing required parameters: intent, tokenSymbol, targetAddress' });
     }
 
     const cleanSymbol = String(tokenSymbol).toUpperCase().replace(/[^A-Z]/g, '');
     if (!['HBAR', 'USDC', 'SAUCE'].includes(cleanSymbol)) {
-      return new Response(
-        JSON.stringify({ error: `Unsupported token: ${cleanSymbol}. Must be HBAR, USDC, or SAUCE.` }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return res.status(400).json({ error: `Unsupported token: ${cleanSymbol}. Must be HBAR, USDC, or SAUCE.` });
     }
 
     // --- RESOLVE ORACLE PRICES ---
@@ -137,10 +127,7 @@ export default async function handler(req: Request) {
     }
 
     if (isNaN(finalAmount) || finalAmount <= 0) {
-      return new Response(
-        JSON.stringify({ error: `Invalid transaction amount: "${amount}". Must be a positive number.` }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return res.status(400).json({ error: `Invalid transaction amount: "${amount}". Must be a positive number.` });
     }
 
     // --- RESOLVE TARGET ADDRESS ---
@@ -165,10 +152,7 @@ export default async function handler(req: Request) {
       else if (cleanSymbol === 'SAUCE') tokenIdStr = process.env.SAUCE_TOKEN_ID || '';
 
       if (!tokenIdStr) {
-        return new Response(
-          JSON.stringify({ error: `Token ID for ${cleanSymbol} is not configured on the server. Check USDC_TOKEN_ID / SAUCE_TOKEN_ID env vars.` }),
-          { status: 500, headers: { 'Content-Type': 'application/json' } }
-        );
+        return res.status(500).json({ error: `Token ID for ${cleanSymbol} is not configured on the server. Check USDC_TOKEN_ID / SAUCE_TOKEN_ID env vars.` });
       }
 
       const tokenId = TokenId.fromString(tokenIdStr);
@@ -191,8 +175,7 @@ export default async function handler(req: Request) {
     const formattedTxId = txIdStr.replace('@', '-').replace(/\./g, '-');
     const explorerUrl = `https://hashscan.io/testnet/transaction/${formattedTxId}`;
 
-    return new Response(
-      JSON.stringify({
+    return res.status(200).json({
         status: 'SUCCESS',
         transactionId: txIdStr,
         explorerUrl,
@@ -200,20 +183,15 @@ export default async function handler(req: Request) {
         fiatValueUsd: calculatedFiat.toFixed(2),
         tokenSymbol: cleanSymbol,
         recipient: resolvedTarget,
-      }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+      });
 
   } catch (error: any) {
     const errMsg = error?.message || String(error);
     console.error('[execute] EXECUTION FAILED:', errMsg, error?.stack);
-    return new Response(
-      JSON.stringify({
+    return res.status(500).json({
         error: errMsg,
         status: 'FAILED',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+      });
   } finally {
     // ALWAYS close the client — prevents gRPC connection leaks
     if (client) {
