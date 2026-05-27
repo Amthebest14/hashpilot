@@ -192,23 +192,51 @@ export default async function handler(req: any, res: any) {
       if (actionName === 'market_intelligence') {
         const queryAsset = asset || 'bitcoin';
         try {
-          const cgRes = await fetchWithTimeout(`https://api.coingecko.com/api/v3/simple/price?ids=${queryAsset}&vs_currencies=usd&include_24hr_change=true`, 5000);
+          const cgRes = await fetchWithTimeout(`https://api.coingecko.com/api/v3/simple/price?ids=${queryAsset}&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true&include_24hr_change=true`, 5000);
+          let rawData = "No data returned";
           if (cgRes.ok) {
-            const data = await cgRes.json();
-            toolOutput = `📈 **Premium Market Intelligence: ${queryAsset.toUpperCase()}**\n\n` + JSON.stringify(data, null, 2);
-          } else {
-            toolOutput = `Premium intel fetch failed. Status: ${cgRes.status}`;
+            rawData = JSON.stringify(await cgRes.json());
           }
+          
+          const { GoogleGenerativeAI } = await import('@google/generative-ai');
+          const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+          const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+          
+          const prompt = `You are Hashpilot, a premium Web3 Financial Analyst. The user just paid for a deep Market Intelligence report on '${queryAsset}'.
+          Here is the raw real-time data from CoinGecko: ${rawData}
+          
+          Write a highly detailed, professional, and visually appealing market analysis report using Markdown. Include:
+          1. Current Price & 24h Change Summary
+          2. Market Capitalization & Volume Insights
+          3. Technical/Sentiment Outlook (extrapolate intelligently from the data, mention support/resistance concepts contextually)
+          Provide deep qualitative insight that makes the user feel they got their money's worth.`;
+          
+          const aiRes = await model.generateContent(prompt);
+          toolOutput = aiRes.response.text();
         } catch (e) {
-          toolOutput = `Premium intel fetch timed out.`;
+          toolOutput = `Premium intel fetch failed. Error: ${String(e)}`;
         }
       } else if (actionName === 'contract_audit') {
         try {
           const { GoogleGenerativeAI } = await import('@google/generative-ai');
           const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
           const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-          const auditRes = await model.generateContent(`Audit this solidity code for vulnerabilities. Be concise and professional:\n\n${codeSnippet || "No code provided."}`);
-          toolOutput = `🛡️ **Premium Contract Audit**\n\n${auditRes.response.text()}`;
+          
+          const prompt = `You are Hashpilot, an elite Smart Contract Auditor. The user just paid for a comprehensive security audit of this Solidity code:
+          
+          \`\`\`solidity
+          ${codeSnippet || "No code provided."}
+          \`\`\`
+          
+          Perform a highly detailed, meticulous line-by-line audit. Your report MUST include:
+          1. Executive Summary (Overall security posture)
+          2. Vulnerabilities Found (Categorized by Critical, High, Medium, Low severity)
+          3. Logic & Gas Optimizations
+          4. Remediation Steps with corrected code snippets.
+          Do not be brief. Provide a premium, deep-dive report formatted beautifully in Markdown.`;
+          
+          const auditRes = await model.generateContent(prompt);
+          toolOutput = auditRes.response.text();
         } catch (e) {
           toolOutput = `Audit failed. ${String(e)}`;
         }

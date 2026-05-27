@@ -16,7 +16,8 @@ export function useActionRouter() {
     switch (intent) {
       case 'premium_unlock':
       case 'pay_service':
-      case 'transfer_token': {
+      case 'transfer_token':
+      case 'p2p_transfer': {
         return async () => {
           // Extract variables mapped by api/intent.ts
           const { amount, targetAddress, tokenSymbol, isFiatDenominated, fiatAmountUsd, actionName, asset, codeSnippet } = parameters;

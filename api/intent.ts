@@ -130,7 +130,8 @@ export default async function handler(req: any, res: any) {
           parameters: {
             amount: "10", // Flat fee for Code Audit
             tokenSymbol: "HBAR",
-            actionName: "contract_audit"
+            actionName: "contract_audit",
+            codeSnippet: functionCall.args.codeSnippet
           },
           reply: "To execute this Premium Workflow and audit the smart contract, please authorize the AP2 Intent Mandate."
         });
