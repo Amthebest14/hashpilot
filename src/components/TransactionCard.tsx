@@ -95,22 +95,27 @@ export default function TransactionCard({
   const tokenSymbol = (parameters.tokenSymbol || 'HBAR').toUpperCase();
   const recipient = parameters.targetAddress || parameters.destination || '';
   const isFiat = !!parameters.isFiatDenominated;
-  const fiatUsd = parameters.fiatAmountUsd ? parseFloat(parameters.fiatAmountUsd) : 0;
   const rawAmount = parameters.amount ? parseFloat(parameters.amount) : 0;
 
-  let displayAmount = rawAmount;
-  let displayFiat = isFiat ? fiatUsd : 0;
+  // 1. Fix the Fiat vs. Token Math Routing
+  let displayTokenAmount = isFiat ? 0 : rawAmount;
+  let displayFiatAmount = isFiat ? rawAmount : 0;
 
   if (prices) {
-    const rate = prices[tokenSymbol as keyof Prices] || 1;
+    const pythPrice = prices[tokenSymbol as keyof Prices] || 1;
     if (isFiat) {
-      displayAmount = fiatUsd / rate;
+      displayFiatAmount = rawAmount;
+      displayTokenAmount = rawAmount / pythPrice;
     } else {
-      displayFiat = rawAmount * rate;
+      displayTokenAmount = rawAmount;
+      displayFiatAmount = rawAmount * pythPrice;
     }
   }
 
   const missingRecipient = !recipient;
+
+  // Make sure we check against the actual calculated token amount for the ledger pre-check
+  const displayAmount = displayTokenAmount;
 
   let actionLabel = 'Execute Treasury Transaction';
   if (intent === 'pay_service') actionLabel = `Pay Vendor in ${tokenSymbol}`;
@@ -185,18 +190,23 @@ export default function TransactionCard({
           <div className="bg-[#10121d] border border-[#1e2335] rounded-2xl p-5 flex flex-col items-center justify-center gap-1.5 relative overflow-hidden">
             <span className="text-[10px] text-[#8c98b0] uppercase font-black tracking-widest">Calculated Transaction Flow</span>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-black text-white font-mono">{displayAmount.toFixed(4)}</span>
+              <span className="text-3xl font-black text-white font-mono">
+                {prices ? displayTokenAmount.toFixed(4) : (isFiat ? '...' : displayTokenAmount.toFixed(4))}
+              </span>
               <span className="text-sm font-black text-[#5c54e6]">{tokenSymbol}</span>
             </div>
-            {displayFiat > 0 && (
+            {(displayFiatAmount > 0 || isFiat) && (
               <span className="text-xs text-[#8c98b0] font-medium flex items-center gap-0.5">
-                <DollarSign size={12} className="inline text-[#8c98b0]" /> {displayFiat.toFixed(2)} USD
+                <DollarSign size={12} className="inline text-[#8c98b0]" /> 
+                {prices ? displayFiatAmount.toFixed(2) : (isFiat ? displayFiatAmount.toFixed(2) : '...')} USD
               </span>
             )}
           </div>
 
-          {/* Sender → Receiver Ledger */}
-          <div className="bg-[#1a1e2e]/30 border border-[#23293d] rounded-2xl p-4 space-y-3">
+          {/* Transfer Details Partition */}
+          <div className="bg-[#1a1e2e]/30 border border-[#23293d] rounded-2xl p-4 space-y-4">
+            
+            {/* Sender -> Receiver */}
             <div className="flex justify-between items-center text-xs">
               <div className="flex flex-col">
                 <span className="text-[9px] text-[#8c98b0] uppercase font-bold">Authorized Sender</span>
@@ -208,10 +218,17 @@ export default function TransactionCard({
               <div className="flex flex-col items-end">
                 <span className="text-[9px] text-[#8c98b0] uppercase font-bold">Target Recipient</span>
                 <span className="font-mono font-semibold text-[#e2e8f0] truncate w-28 text-right mt-0.5" title={recipient}>
-                  {recipient}
+                  {recipient || 'Unknown Address'}
                 </span>
               </div>
             </div>
+
+            {/* Network Fee Row */}
+            <div className="pt-3 border-t border-[#23293d] flex justify-between items-center">
+              <span className="text-[10px] text-[#8c98b0] uppercase font-bold">Estimated Network Fee</span>
+              <span className="text-xs font-mono text-[#e2e8f0]">~$0.0001</span>
+            </div>
+
           </div>
 
           {/* CTAs */}
