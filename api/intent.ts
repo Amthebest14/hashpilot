@@ -138,6 +138,8 @@ export default async function handler(req: any, res: any) {
       8. If the user asks to cancel, abort, or stop a pending transaction, or simply changes their mind and wants to clear the board, output the JSON intent literally as "cancel".
       9. In the 'reply' field, provide a natural, encouraging confirmation (e.g., "Sure! I've prepared that balance check for you.", "I've drafted that transaction to send HBAR.", or "I've prepared that USDC payment for you.")
 
+      CRITICAL MEMORY RULE: Use the conversation history to fill in missing parameters for the current user intent. If the current message is just an address (e.g., "0.0.1234"), look at the previous messages to understand if it belongs to a pending transfer_token or pay_service intent, and output the full intent with the newly provided address.
+      
       Avoid all technical prefixes. Just talk like a human expert.`
     });
 
