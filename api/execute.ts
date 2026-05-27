@@ -1,8 +1,3 @@
-// CRITICAL: Must be Node.js runtime — @hashgraph/sdk uses gRPC which is NOT compatible with Edge
-export const config = {
-  runtime: 'nodejs',
-};
-
 import {
   Client,
   TransferTransaction,
