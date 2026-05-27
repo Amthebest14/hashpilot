@@ -91,7 +91,7 @@ export default async function handler(req: any, res: any) {
   // --- ENV GUARD: fail fast before any async work ---
   const treasuryIdStr = process.env.TREASURY_ACCOUNT_ID;
   const treasuryKeyStr = process.env.TREASURY_PRIVATE_KEY;
-  const revenueIdStr = process.env.REVENUE_ACCOUNT_ID || '0.0.12345'; // Fallback if not set
+  const revenueIdStr = process.env.REVENUE_ACCOUNT_ID || '0.0.8698286'; 
 
   if (!treasuryIdStr || !treasuryKeyStr) {
     console.error('[execute] CRITICAL: Treasury env vars not set.');
