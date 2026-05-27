@@ -135,7 +135,9 @@ export default async function handler(req: any, res: any) {
 
     // --- INIT HEDERA CLIENT ---
     const treasuryId = AccountId.fromString(treasuryIdStr);
-    const treasuryKey = PrivateKey.fromString(treasuryKeyStr);
+    const treasuryKey = treasuryKeyStr.startsWith('0x') 
+      ? PrivateKey.fromStringECDSA(treasuryKeyStr)
+      : PrivateKey.fromString(treasuryKeyStr);
     client = Client.forTestnet();
     client.setOperator(treasuryId, treasuryKey);
     // Hard timeout on the Hedera network calls (20s)
