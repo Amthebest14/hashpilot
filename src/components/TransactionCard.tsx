@@ -94,6 +94,8 @@ export default function TransactionCard({
     }
   }
 
+  const missingRecipient = !recipient;
+
   let actionLabel = 'Execute Treasury Transaction';
   if (intent === 'pay_service') actionLabel = `Pay Vendor in ${tokenSymbol}`;
   else if (intent === 'transfer_token') actionLabel = `Send ${tokenSymbol} Now`;
@@ -199,17 +201,26 @@ export default function TransactionCard({
           {/* CTAs */}
           <div className="pt-2">
             {status === 'idle' && (
-              <button
-                onClick={handleExecute}
-                disabled={isEffectivelyExpired}
-                className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all duration-300 ${
-                  isEffectivelyExpired
-                    ? 'bg-[#222631] text-[#8b95a5] cursor-not-allowed border border-transparent'
-                    : 'bg-[#5c54e6] hover:bg-[#6c64ff] text-white hover:shadow-[0_0_20px_rgba(92,84,230,0.4)] active:scale-[0.98]'
-                }`}
-              >
-                {isEffectivelyExpired ? 'Aborted / Cancelled' : actionLabel}
-              </button>
+              missingRecipient ? (
+                <div className="w-full p-4 bg-amber-500/10 border border-amber-500/25 rounded-2xl flex flex-col gap-1.5">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">⚠ No Recipient Address</span>
+                  <span className="text-[11px] text-amber-300/80 leading-snug">
+                    Please retry your message and include a destination account ID — e.g. <span className="font-mono">0.0.12345</span>
+                  </span>
+                </div>
+              ) : (
+                <button
+                  onClick={handleExecute}
+                  disabled={isEffectivelyExpired}
+                  className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all duration-300 ${
+                    isEffectivelyExpired
+                      ? 'bg-[#222631] text-[#8b95a5] cursor-not-allowed border border-transparent'
+                      : 'bg-[#5c54e6] hover:bg-[#6c64ff] text-white hover:shadow-[0_0_20px_rgba(92,84,230,0.4)] active:scale-[0.98]'
+                  }`}
+                >
+                  {isEffectivelyExpired ? 'Aborted / Cancelled' : actionLabel}
+                </button>
+              )
             )}
 
             {status === 'pending' && (

@@ -24,7 +24,7 @@ export function useActionRouter() {
           const symbol = (tokenSymbol || 'HBAR').toUpperCase() as 'HBAR' | 'USDC' | 'SAUCE';
 
           if (!recipient) {
-            throw new Error('Missing recipient address (targetAddress).');
+            throw new Error('No destination address found. Please retry and include the recipient\'s Hedera account ID (e.g. "send 1 HBAR to 0.0.12345").');
           }
 
           if (isFiatDenominated) {
