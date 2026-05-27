@@ -21,15 +21,7 @@ function getStorageKey(address: string): string {
   return `${STORAGE_PREFIX}${address.replace(/\./g, '_')}`;
 }
 
-function readFromStorage(address: string): MockBalances {
-  try {
-    const raw = localStorage.getItem(getStorageKey(address));
-    if (raw) {
-      return { ...DEFAULT_BALANCES, ...JSON.parse(raw) };
-    }
-  } catch { /* ignore */ }
-  return { ...DEFAULT_BALANCES };
-}
+
 
 export function useMockLedger(hederaAddress?: string) {
   const [balances, setBalances] = useState<MockBalances>(DEFAULT_BALANCES);
