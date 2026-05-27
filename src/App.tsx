@@ -8,9 +8,8 @@ import ChatBox from './components/ChatBox';
 
 import { Toaster } from 'react-hot-toast';
 
-import { Menu, X } from 'lucide-react';
-import CustomWalletButton from './components/CustomWalletButton';
-import DashboardHeader from './components/DashboardHeader';
+import { X } from 'lucide-react';
+import Navbar from './components/Navbar';
 
 function App() {
   const [showApp, setShowApp] = useState(false);
@@ -101,32 +100,12 @@ function App() {
 
       {/* Main Area */}
       <div className="flex-1 h-screen relative z-10 flex flex-col overflow-hidden bg-[#090A0F]">
-        {/* Top Navbar */}
-        <header className="h-20 shrink-0 border-b border-[#222631] flex items-center justify-between px-4 md:px-10 relative z-40 bg-[#090A0F]/80 backdrop-blur-md">
-           <div className="flex items-center gap-4">
-              <button 
-                onClick={() => setIsMobileMenuOpen(true)}
-                className="md:hidden p-2 rounded-xl bg-[#1A1D27] border border-[#222631] text-[#E2E8F0] hover:bg-[#222631]"
-              >
-                <Menu size={20} />
-              </button>
-              <div className="flex flex-col">
-                 <span className="text-[10px] md:text-[11px] font-medium tracking-wide text-[#5C54E6]">Hedera Network</span>
-                 <h1 className="text-lg md:text-xl font-bold tracking-wide capitalize text-[#E2E8F0]">{activeTab}</h1>
-              </div>
-           </div>
-           
-           <div className="flex items-center gap-3 md:gap-6">
-              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-[#1A1D27] rounded-xl border border-[#222631]">
-                 <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                 <span className="text-[11px] font-medium tracking-wide text-[#8B95A5]">Testnet Node Active</span>
-              </div>
-              <CustomWalletButton />
-           </div>
-        </header>
-
-        {/* Dashboard Header - Global Persistence */}
-        <DashboardHeader hederaId={localHederaId} />
+        {/* Unified Top Navbar */}
+        <Navbar 
+          hederaId={localHederaId} 
+          activeTab={activeTab} 
+          onOpenMenu={() => setIsMobileMenuOpen(true)} 
+        />
 
         <main className="flex-1 overflow-hidden flex flex-col">
           {activeTab === 'copilot' ? (
