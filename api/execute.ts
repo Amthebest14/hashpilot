@@ -197,8 +197,10 @@ export default async function handler(req: any, res: any) {
           const { GoogleGenerativeAI } = await import('@google/generative-ai');
           const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
           const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+          const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
           
           let prompt = `You are Hashpilot, a premium Web3 Financial Analyst. The user just paid for a deep Market Intelligence report on '${queryAsset}'.
+          Today's Date: ${currentDate}
           Here is the raw real-time data: ${rawData}
           
           Write a highly detailed, professional, and visually appealing market analysis report using Markdown. Include:
@@ -209,6 +211,7 @@ export default async function handler(req: any, res: any) {
 
           if (isStock) {
             prompt = `You are Hashpilot, a premium Wall Street Financial Analyst. The user just paid for a deep Market Intelligence report on the traditional stock/RWA '${queryAsset}'.
+          Today's Date: ${currentDate}
           Here is the raw real-time data from Yahoo Finance: ${rawData}
           
           Write a highly detailed, professional, and visually appealing 'Wall Street' style market analysis report using Markdown. Include:
