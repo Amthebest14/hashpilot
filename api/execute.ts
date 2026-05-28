@@ -23,48 +23,7 @@ async function fetchWithTimeout(url: string, timeoutMs = 8000): Promise<Response
   }
 }
 
-async function getPrices() {
-  const HBAR_FEED = 'e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43';
-  const USDC_FEED = 'eaa020c61cc479712813461ce153894b96a6c00b21ed0cfc2798d1f9a9e9c94a';
-
-  let hbarPrice = 0.06;
-  let usdcPrice = 1.00;
-  let saucePrice = 0.015;
-
-  try {
-    const pythUrl = `https://hermes.pyth.network/v2/updates/price/latest?ids[]=${HBAR_FEED}&ids[]=${USDC_FEED}`;
-    const pythRes = await fetchWithTimeout(pythUrl, 7000);
-    if (pythRes.ok) {
-      const data = await pythRes.json();
-      if (data.parsed && Array.isArray(data.parsed)) {
-        for (const item of data.parsed) {
-          const priceVal = parseFloat(item.price.price);
-          const expo = item.price.expo;
-          const finalPrice = priceVal * Math.pow(10, expo);
-          if (item.id === HBAR_FEED) hbarPrice = finalPrice;
-          else if (item.id === USDC_FEED) usdcPrice = finalPrice;
-        }
-      }
-    }
-  } catch (e) {
-    console.warn('[execute] Pyth fetch failed, using fallback prices:', e);
-  }
-
-  try {
-    const saucerswapRes = await fetchWithTimeout('https://api.saucerswap.finance/tokens', 7000);
-    if (saucerswapRes.ok) {
-      const tokens = await saucerswapRes.json();
-      if (Array.isArray(tokens)) {
-        const sauceToken = tokens.find((t: any) => t.symbol === 'SAUCE');
-        if (sauceToken?.priceUsd) saucePrice = parseFloat(sauceToken.priceUsd);
-      }
-    }
-  } catch (e) {
-    console.warn('[execute] SaucerSwap fetch failed, using fallback SAUCE price:', e);
-  }
-
-  return { HBAR: hbarPrice, USDC: usdcPrice, SAUCE: saucePrice };
-}
+import { fetchLivePrices } from './_lib/pricing';
 
 async function resolveAccount(address: string): Promise<string> {
   const cleanAddress = address.trim();
@@ -123,7 +82,7 @@ export default async function handler(req: any, res: any) {
     }
 
     // --- RESOLVE ORACLE PRICES ---
-    const prices = await getPrices();
+    const prices = await fetchLivePrices();
     const tokenPrice = prices[cleanSymbol as keyof typeof prices] || 1;
 
     let finalAmount = parseFloat(amount || '0');
