@@ -116,7 +116,8 @@ export default async function handler(req: any, res: any) {
         return res.status(200).json({
           intent: 'premium_unlock',
           parameters: {
-            amount: "5", // Flat fee for Market Intel
+            fiatAmountUsd: "1.00", // Base $1.00 fee for Market Intel
+            isFiatDenominated: true,
             tokenSymbol: "HBAR",
             actionName: "market_intelligence",
             asset: functionCall.args.asset || "general market",
@@ -130,7 +131,8 @@ export default async function handler(req: any, res: any) {
         return res.status(200).json({
           intent: 'premium_unlock',
           parameters: {
-            amount: "10", // Flat fee for Code Audit
+            fiatAmountUsd: "2.00", // Base $2.00 fee for Code Audit
+            isFiatDenominated: true,
             tokenSymbol: "HBAR",
             actionName: "contract_audit",
             codeSnippet: functionCall.args.codeSnippet

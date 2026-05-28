@@ -5,7 +5,7 @@ import type { TreasuryPayload } from './treasury';
 export function useActionRouter() {
   const { isConnected } = useAccount();
 
-  const getExecutableFunction = (intent: string, parameters: any): (() => Promise<any>) | null => {
+  const getExecutableFunction = (intent: string, parameters: any): ((overrideParams?: any) => Promise<any>) | null => {
     // strictly enforce connection for identity / scoring / tracking
     if (!isConnected) {
       return async () => { 
@@ -18,11 +18,12 @@ export function useActionRouter() {
       case 'pay_service':
       case 'transfer_token':
       case 'p2p_transfer': {
-        return async () => {
-          // Extract variables mapped by api/intent.ts
-          const { amount, targetAddress, tokenSymbol, isFiatDenominated, fiatAmountUsd, actionName, asset, codeSnippet } = parameters;
+        return async (overrideParams?: any) => {
+          // Merge parameters with any overrides provided by the UI (e.g. selected currency)
+          const mergedParams = { ...parameters, ...overrideParams };
+          const { amount, targetAddress, tokenSymbol, isFiatDenominated, fiatAmountUsd, actionName, asset, codeSnippet } = mergedParams;
           
-          const recipient = targetAddress || parameters.destination;
+          const recipient = targetAddress || mergedParams.destination;
           const symbol = (tokenSymbol || 'HBAR').toUpperCase() as 'HBAR' | 'USDC' | 'SAUCE';
 
           if (!recipient && intent !== 'premium_unlock') {
@@ -43,10 +44,10 @@ export function useActionRouter() {
             intent,
             intentType: intent === 'premium_unlock' ? 'premium_unlock' : 'p2p_transfer',
             tokenSymbol: symbol,
-            amount: amount || '0',
+            amount: String(amount || '0'),
             targetAddress: recipient,
             isFiatDenominated: !!isFiatDenominated,
-            fiatAmountUsd: fiatAmountUsd || undefined,
+            fiatAmountUsd: fiatAmountUsd ? String(fiatAmountUsd) : undefined,
             actionName,
             asset,
             codeSnippet

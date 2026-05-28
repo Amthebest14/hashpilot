@@ -19,7 +19,7 @@ type TransactionCardProps = {
   hederaId?: string;
   isExpired?: boolean;
   intentType?: 'p2p_transfer' | 'premium_unlock';
-  onExecute: () => Promise<any>;
+  onExecute: (overrideParams?: any) => Promise<any>;
   onUpdateState: (status: TxStatus, hash?: string | null, resultData?: any) => void;
 };
 
@@ -38,6 +38,7 @@ export default function TransactionCard({
   const [hash, setHash] = useState<string | null>(initialHash);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [prices, setPrices] = useState<Prices | null>(null);
+  const [selectedCurrency, setSelectedCurrency] = useState<SupportedToken>((parameters.tokenSymbol || 'HBAR').toUpperCase() as SupportedToken);
   const { address } = useAccount();
   const { balances, deductBalance, hasSufficientBalance } = useMockLedger(hederaId);
 
@@ -49,7 +50,7 @@ export default function TransactionCard({
 
   const handleExecute = async () => {
     // --- PRE-CHECK: Mock ledger balance gate ---
-    const token = (tokenSymbol as SupportedToken) in balances ? tokenSymbol as SupportedToken : 'HBAR';
+    const token = selectedCurrency;
     if (!hasSufficientBalance(token, displayAmount)) {
       setStatus('error');
       setErrorMsg(`Insufficient Hashpilot Balance. You have ${balances[token]} ${token} but this transaction requires ${displayAmount.toFixed(4)} ${token}.`);
@@ -61,7 +62,7 @@ export default function TransactionCard({
     setErrorMsg(null);
     onUpdateState('pending');
     try {
-      const result = await onExecute();
+      const result = await onExecute({ tokenSymbol: selectedCurrency });
       const explorerUrl =
         result && typeof result === 'object' ? result.explorerUrl : result;
 
@@ -94,7 +95,6 @@ export default function TransactionCard({
   const isEffectivelyExpired = isExpired && status !== 'success';
 
   // Safely extract and sanitize parameters (hardened against JSON bleed)
-  const tokenSymbol = (parameters.tokenSymbol || 'HBAR').toUpperCase();
   const recipient = intentType === 'premium_unlock' ? 'Hashpilot Premium Vault' : (parameters.targetAddress || parameters.destination || '');
   const isFiat = !!parameters.isFiatDenominated;
   
@@ -110,7 +110,7 @@ export default function TransactionCard({
   let displayFiatAmount = isFiat ? rawAmount : 0;
 
   if (prices) {
-    const pythPrice = prices[tokenSymbol as keyof Prices] || 1;
+    const pythPrice = prices[selectedCurrency as keyof Prices] || 1;
     if (isFiat) {
       displayFiatAmount = rawAmount;
       displayTokenAmount = rawAmount / pythPrice;
@@ -127,8 +127,8 @@ export default function TransactionCard({
 
   let actionLabel = 'Execute Treasury Transaction';
   if (intentType === 'premium_unlock') actionLabel = 'Pay & Unlock';
-  else if (intent === 'pay_service') actionLabel = `Pay Vendor in ${tokenSymbol}`;
-  else if (intent === 'transfer_token' || intentType === 'p2p_transfer') actionLabel = `Send ${tokenSymbol} Now`;
+  else if (intent === 'pay_service') actionLabel = `Pay Vendor in ${selectedCurrency}`;
+  else if (intent === 'transfer_token' || intentType === 'p2p_transfer') actionLabel = `Send ${selectedCurrency} Now`;
 
   return (
     <div className={`w-full max-w-md my-4 animate-in fade-in slide-in-from-bottom-4 duration-500 ${isEffectivelyExpired ? 'opacity-50' : ''}`}>
@@ -190,7 +190,7 @@ export default function TransactionCard({
             </div>
             {prices && (
               <span className="text-[10px] text-[#8c98b0] bg-[#1a1e2e]/80 border border-[#23293d] rounded-lg px-2 py-1 font-mono">
-                1 {tokenSymbol} ≈ ${prices[tokenSymbol as keyof Prices]?.toFixed(4)} USD
+                1 {selectedCurrency} ≈ ${prices[selectedCurrency as keyof Prices]?.toFixed(4)} USD
               </span>
             )}
           </div>
@@ -202,7 +202,20 @@ export default function TransactionCard({
               <span className="text-3xl font-black text-white font-mono">
                 {prices ? displayTokenAmount.toFixed(4) : (isFiat ? '...' : displayTokenAmount.toFixed(4))}
               </span>
-              <span className="text-sm font-black text-[#5c54e6]">{tokenSymbol}</span>
+              
+              {status === 'idle' && !isEffectivelyExpired ? (
+                <select 
+                  value={selectedCurrency}
+                  onChange={(e) => setSelectedCurrency(e.target.value as SupportedToken)}
+                  className="bg-[#1a1e2e] border border-[#23293d] text-[#5c54e6] text-sm font-black rounded-lg px-2 py-1 ml-1 outline-none cursor-pointer hover:border-[#5c54e6] transition-colors appearance-none text-center"
+                >
+                  <option value="HBAR">HBAR</option>
+                  <option value="USDC">USDC</option>
+                  <option value="SAUCE">SAUCE</option>
+                </select>
+              ) : (
+                <span className="text-sm font-black text-[#5c54e6] ml-1">{selectedCurrency}</span>
+              )}
             </div>
             {(displayFiatAmount > 0 || isFiat) && (
               <span className="text-xs text-[#8c98b0] font-medium flex items-center gap-0.5">
