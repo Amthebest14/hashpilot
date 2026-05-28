@@ -1,4 +1,4 @@
-import { fetchLivePrices } from './_lib/pricing';
+import { fetchLivePrices } from './_lib/pricing.js';
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'GET' && req.method !== 'POST') {

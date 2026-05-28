@@ -23,7 +23,7 @@ async function fetchWithTimeout(url: string, timeoutMs = 8000): Promise<Response
   }
 }
 
-import { fetchLivePrices } from './_lib/pricing';
+import { fetchLivePrices } from './_lib/pricing.js';
 
 async function resolveAccount(address: string): Promise<string> {
   const cleanAddress = address.trim();
