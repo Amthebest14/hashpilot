@@ -192,7 +192,22 @@ export default async function handler(req: any, res: any) {
     
     if (intentType === 'premium_unlock') {
       if (actionName === 'market_intelligence') {
-        const queryAsset = asset || 'bitcoin';
+        const coinIdMapper: Record<string, string> = {
+          "hbar": "hedera-hashgraph",
+          "hedera": "hedera-hashgraph",
+          "btc": "bitcoin",
+          "bitcoin": "bitcoin",
+          "eth": "ethereum",
+          "ethereum": "ethereum",
+          "ape": "apecoin",
+          "apecoin": "apecoin",
+          "sol": "solana",
+          "solana": "solana"
+        };
+        
+        let queryAsset = String(asset || 'bitcoin').toLowerCase().trim();
+        queryAsset = coinIdMapper[queryAsset] || queryAsset;
+
         try {
           const cgRes = await fetchWithTimeout(`https://api.coingecko.com/api/v3/simple/price?ids=${queryAsset}&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true&include_24hr_change=true`, 5000);
           let rawData = "No data returned";
