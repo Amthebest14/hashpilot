@@ -54,13 +54,14 @@ export default async function handler(req: any, res: any) {
           },
           {
             name: "MarketIntelligenceTool",
-            description: "Fetches live cryptocurrency market data, coin prices, and analysis from CoinGecko. Premium Tool.",
+            description: "Fetches live cryptocurrency market data or traditional stock market data (TradFi/RWAs). Supports crypto names ('HBAR', 'bitcoin') and stock tickers ('AAPL', 'SPY'). Premium Tool.",
             parameters: {
               type: "OBJECT",
               properties: {
-                asset: { type: "STRING", description: "The cryptocurrency asset to analyze (e.g., 'bitcoin', 'ethereum')" }
+                asset: { type: "STRING", description: "The asset to analyze (e.g., 'bitcoin', 'AAPL')" },
+                assetType: { type: "STRING", description: "The type of asset, must be 'crypto' or 'stock'" }
               },
-              required: ["asset"]
+              required: ["asset", "assetType"]
             }
           },
           {
@@ -118,7 +119,8 @@ export default async function handler(req: any, res: any) {
             amount: "5", // Flat fee for Market Intel
             tokenSymbol: "HBAR",
             actionName: "market_intelligence",
-            asset: functionCall.args.asset || "general market"
+            asset: functionCall.args.asset || "general market",
+            assetType: functionCall.args.assetType || "crypto"
           },
           reply: "To execute this Premium Workflow and fetch live market intel, please authorize the AP2 Intent Mandate."
         });

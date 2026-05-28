@@ -24,6 +24,7 @@ async function fetchWithTimeout(url: string, timeoutMs = 8000): Promise<Response
 }
 
 import { fetchLivePrices } from './_lib/pricing.js';
+import yahooFinance from 'yahoo-finance2';
 
 async function resolveAccount(address: string): Promise<string> {
   const cleanAddress = address.trim();
@@ -62,7 +63,7 @@ export default async function handler(req: any, res: any) {
   let client: Client | null = null;
 
   try {
-    const { intent, intentType, tokenSymbol, amount, targetAddress, isFiatDenominated, fiatAmountUsd, actionName, asset, codeSnippet } = req.body;
+    const { intent, intentType, tokenSymbol, amount, targetAddress, isFiatDenominated, fiatAmountUsd, actionName, asset, assetType, codeSnippet } = req.body;
 
     // --- INPUT VALIDATION ---
     if (!tokenSymbol) {
@@ -151,41 +152,71 @@ export default async function handler(req: any, res: any) {
     
     if (intentType === 'premium_unlock') {
       if (actionName === 'market_intelligence') {
-        const coinIdMapper: Record<string, string> = {
-          "hbar": "hedera-hashgraph",
-          "hedera": "hedera-hashgraph",
-          "btc": "bitcoin",
-          "bitcoin": "bitcoin",
-          "eth": "ethereum",
-          "ethereum": "ethereum",
-          "ape": "apecoin",
-          "apecoin": "apecoin",
-          "sol": "solana",
-          "solana": "solana"
-        };
-        
-        let queryAsset = String(asset || 'bitcoin').toLowerCase().trim();
-        queryAsset = coinIdMapper[queryAsset] || queryAsset;
+        const isStock = assetType === 'stock';
+        let rawData = "No data returned";
+        const queryAsset = String(asset || 'bitcoin').toLowerCase().trim();
 
         try {
-          const cgRes = await fetchWithTimeout(`https://api.coingecko.com/api/v3/simple/price?ids=${queryAsset}&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true&include_24hr_change=true`, 5000);
-          let rawData = "No data returned";
-          if (cgRes.ok) {
-            rawData = JSON.stringify(await cgRes.json());
+          if (isStock) {
+            // TRADFI / RWA LOGIC
+            const quote = await yahooFinance.quote(queryAsset);
+            
+            // Map the massive yahoo object down to conserve tokens
+            const mappedData = {
+              price: quote.regularMarketPrice,
+              percentChange: quote.regularMarketChangePercent,
+              marketCap: quote.marketCap,
+              trailingPE: quote.trailingPE,
+              dividendYield: quote.dividendYield,
+              fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh,
+              fiftyTwoWeekLow: quote.fiftyTwoWeekLow,
+            };
+            rawData = JSON.stringify(mappedData);
+          } else {
+            // CRYPTO LOGIC
+            const coinIdMapper: Record<string, string> = {
+              "hbar": "hedera-hashgraph",
+              "hedera": "hedera-hashgraph",
+              "btc": "bitcoin",
+              "bitcoin": "bitcoin",
+              "eth": "ethereum",
+              "ethereum": "ethereum",
+              "ape": "apecoin",
+              "apecoin": "apecoin",
+              "sol": "solana",
+              "solana": "solana"
+            };
+            const coinGeckoId = coinIdMapper[queryAsset] || queryAsset;
+            
+            const cgRes = await fetchWithTimeout(`https://api.coingecko.com/api/v3/simple/price?ids=${coinGeckoId}&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true&include_24hr_change=true`, 5000);
+            if (cgRes.ok) {
+              rawData = JSON.stringify(await cgRes.json());
+            }
           }
-          
+
           const { GoogleGenerativeAI } = await import('@google/generative-ai');
           const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
           const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
           
-          const prompt = `You are Hashpilot, a premium Web3 Financial Analyst. The user just paid for a deep Market Intelligence report on '${queryAsset}'.
-          Here is the raw real-time data from CoinGecko: ${rawData}
+          let prompt = `You are Hashpilot, a premium Web3 Financial Analyst. The user just paid for a deep Market Intelligence report on '${queryAsset}'.
+          Here is the raw real-time data: ${rawData}
           
           Write a highly detailed, professional, and visually appealing market analysis report using Markdown. Include:
           1. Current Price & 24h Change Summary
           2. Market Capitalization & Volume Insights
           3. Technical/Sentiment Outlook (extrapolate intelligently from the data, mention support/resistance concepts contextually)
           Provide deep qualitative insight that makes the user feel they got their money's worth.`;
+
+          if (isStock) {
+            prompt = `You are Hashpilot, a premium Wall Street Financial Analyst. The user just paid for a deep Market Intelligence report on the traditional stock/RWA '${queryAsset}'.
+          Here is the raw real-time data from Yahoo Finance: ${rawData}
+          
+          Write a highly detailed, professional, and visually appealing 'Wall Street' style market analysis report using Markdown. Include:
+          1. Current Price & Daily Change Summary
+          2. Market Capitalization & Macro High/Low Context (52-week data)
+          3. Institutional Metrics (Focus on P/E ratio, Dividend Yield, and Valuation)
+          Provide deep, institutional-grade qualitative insight distinguishing this from a standard crypto report.`;
+          }
           
           const aiRes = await model.generateContent(prompt);
           toolOutput = aiRes.response.text();
